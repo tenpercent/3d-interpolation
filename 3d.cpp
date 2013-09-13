@@ -65,7 +65,7 @@ Triangle getTriangleByIndex (QPointF * const points, const quint32 segments, con
 	const quint32 row_segment = triangle_index / triangles_in_row;
 	const quint32 column_segment = triangle_index - triangles_in_row * triangle_index;
 	//
-	if (triangle_index & 1) {//AAAAAAAAAAA
+	if (triangle_index & 1) {
 		a = getVertex(row_segment, column_segment, getVertexIndex(segments, row_segment, column_segment));
 		b = getVertex(row_segment + 1, column_segment, getVertexIndex(segments, row_segment + 1, column_segment));
 		c = getVertex(row_segment, column_segment + 1, getVertexIndex(segments, row_segment, column_segment + 1));
@@ -137,8 +137,13 @@ bool pointInTriangle (const QPointF point, const Triangle &triangle) {
 
 double phiFunctionGetByTriangle (const QPointF point, const Triangle &triangle, const QPointF vertex) {
 	int n = 0;
-	while (triangle[n] != vertex)
+	while (triangle[n] != vertex) {
 		++n;
+		if (n > 2){
+			qDebug() << "at phiFunctionGetByTriangle:" << vertex;
+			break;
+		}
+	}
 	Q_ASSERT(qAbs(psiFunction(vertex, triangle, n)) > 1e-10);
 	Q_ASSERT(qAbs(psiFunction(point, triangle, n)) < 1e10);
 	return psiFunction(point, triangle, n) / psiFunction(vertex, triangle, n);
@@ -146,8 +151,13 @@ double phiFunctionGetByTriangle (const QPointF point, const Triangle &triangle, 
 
 Polynom phiFunctionPolynom (const Triangle &triangle, const QPointF vertex) {
 	int n = 0;
-	while (triangle[n] != vertex)
+	while (triangle[n] != vertex) {
 		++n;
+		if (n > 2) {
+			qDebug() << "at phiFunctionPolynom:" << vertex;
+			break;
+		}
+	}
 	const double psiValue = psiFunction(vertex, triangle, n);
 	Polynom result = psiFunctionPolynom(triangle, n);
 	for (n = 0; n < result.size(); ++n)
@@ -159,10 +169,10 @@ Polynom phiFunctionPolynom (const Triangle &triangle, const QPointF vertex) {
 
 TriangleList getCommonTriangles (QPointF * const points, const quint32 segments, 
 const Vertex v1, const Vertex v2){
-	Vertex v1_ (v1);
-	Vertex v2_ (v2);
+	Vertex v1_ = v1;
+	Vertex v2_ = v2;
 	TriangleList result;
-	const quint32 last_item (segments + 1);
+	const qint32 last_item (segments + 1);
 	if (v1_.index > v2_.index){
 		qSwap(v1_, v2_);
 	}

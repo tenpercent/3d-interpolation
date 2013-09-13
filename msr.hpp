@@ -2,13 +2,13 @@
 
 class MsrMatrix {
 public:
-	quint32 size;
-	quint32 nzcount;
+	const quint32 size;
+	const quint32 nzcount;
 	quint32 *indices;
 	double *elements;
 	double *rightCol;
 
-	MsrMatrix(quint32 size, quint32 nzcount);
+	MsrMatrix(const quint32 size, const quint32 nzcount);
 	~MsrMatrix();
 	double getElement(quint32 i, quint32 j) const;
 	quint32 solve(double *result) const;
