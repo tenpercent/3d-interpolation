@@ -1,0 +1,17 @@
+In order to build, you should execute the following commands
+
+Linux:
+
+qmake-qt4 -makefile
+make
+
+Mac OS X:
+
+qmake -spec macx-g++ x.pro
+make
+
+Windows:
+
+qmake -spec win32-g++ x.pro
+make
+
