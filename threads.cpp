@@ -109,10 +109,12 @@ void taskFillMatrix(Args *a) {
 				if (triangleList.isEmpty()) {
 					continue;
 				}
-				if (i==0){
+				/*
+				if (i == 0){
 					++count;
 					QTextStream(stdout) << "count: " << count << endl;
 				}
+				*/
 				for (int k = 0; k < triangleList.size(); ++k) {
 					polynom = polynomMultiply(
 						phiFunctionPolynom(triangleList.at(k), point1),

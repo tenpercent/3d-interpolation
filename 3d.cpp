@@ -63,7 +63,7 @@ Triangle getTriangleByIndex (QPointF * const points, const quint32 segments, con
 	Vertex a, b, c;
 	const quint32 triangles_in_row = 2 * segments;
 	const quint32 row_segment = triangle_index / triangles_in_row;
-	const quint32 column_segment = triangle_index % triangles_in_row;
+	const quint32 column_segment = (triangle_index % triangles_in_row) / 2;
 	const quint32 second_in_the_cell = triangle_index & 1;//1 if odd; 0 if even
 	
 	if (!second_in_the_cell) {
