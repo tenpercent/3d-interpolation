@@ -6,7 +6,12 @@ MsrMatrix::MsrMatrix(quint32 size, quint32 nzcount):
 	indices(new quint32[size+nzcount+1]),
 	elements(new double[size+nzcount+1]),
 	rightCol(new double[size])
-{}
+{
+	for (quint32 i = 0; i < size + nzcount + 1; ++i){
+		indices[i] = 1111;
+		elements[i] = 1111.;
+	}
+}
 
 MsrMatrix::~MsrMatrix() {
 	delete[] elements;

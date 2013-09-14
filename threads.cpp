@@ -64,18 +64,14 @@ void taskFillMatrix(Args *a) {
 	Vertex vertex1, vertex2;
 	QPointF point1, point2;
 	QPointF intPoints[3];
-	for (quint32 i = a->thread; i < msize + a->matrix->nzcount + 1; ++i) {
-		a->matrix->indices[i] = 42;
-		a->matrix->elements[i] = 42.;
-	}
 	for (quint32 i = 0; i < msize; ++i) {
 		if (i % a->threads != a->thread) {
 			ind += a->locnzc[i];
 			continue;
 		}
+		a->matrix->indices[i] = ind;
 		vertex1 = getVertexByIndex(a->segments, i);
 		point1 = getPointFromVertex(a->points, a->segments, vertex1);
-		a->matrix->indices[i] = ind;
 		for (quint32 j = 0; j < msize; ++j) {
 			partialScalProd = 0.;
 			vertex2 = getVertexByIndex(a->segments, j);
