@@ -29,7 +29,7 @@ quint32 getIndexFromVertex (Vertex v){
 	return v.index;
 }
 
-QPointF getPointByMeshCoordinates (QPointF * const points, const quint32 segments, const quint32 row, const quint32 column) {
+QPointF getPointByMeshCoordinates (QPointF * const points, const quint32 segments, const quint32 row, const quint32 column) {//row:[0..segments], column: the same
 	const QPointF deltaRow = (points[1] - points[0]) / segments;
 	const QPointF deltaColumn = (points[2] - points[0]) / segments;
 	QPointF result = points[0] + row * deltaRow + column * deltaColumn;
@@ -63,9 +63,10 @@ Triangle getTriangleByIndex (QPointF * const points, const quint32 segments, con
 	Vertex a, b, c;
 	const quint32 triangles_in_row = 2 * segments;
 	const quint32 row_segment = triangle_index / triangles_in_row;
-	const quint32 column_segment = triangle_index - triangles_in_row * triangle_index;
-	//
-	if (triangle_index & 1) {
+	const quint32 column_segment = triangle_index % triangles_in_row;
+	const quint32 second_in_the_cell = triangle_index & 1;//1 if odd; 0 if even
+	
+	if (!second_in_the_cell) {
 		a = getVertex(row_segment, column_segment, getVertexIndex(segments, row_segment, column_segment));
 		b = getVertex(row_segment + 1, column_segment, getVertexIndex(segments, row_segment + 1, column_segment));
 		c = getVertex(row_segment, column_segment + 1, getVertexIndex(segments, row_segment, column_segment + 1));
@@ -140,7 +141,7 @@ double phiFunctionGetByTriangle (const QPointF point, const Triangle &triangle, 
 	while (triangle[n] != vertex) {
 		++n;
 		if (n > 2){
-			qDebug() << "at phiFunctionGetByTriangle:" << vertex;
+			qDebug() << "at phiFunctionGetByTriangle():" << vertex;
 			break;
 		}
 	}
@@ -154,7 +155,7 @@ Polynom phiFunctionPolynom (const Triangle &triangle, const QPointF vertex) {
 	while (triangle[n] != vertex) {
 		++n;
 		if (n > 2) {
-			qDebug() << "at phiFunctionPolynom:" << vertex;
+			qDebug() << "at phiFunctionPolynom():" << vertex;
 			break;
 		}
 	}
@@ -178,13 +179,13 @@ const Vertex v1, const Vertex v2){
 	}
 	const qint32 diff (v2_.index - v1_.index);
 	if (diff < 0) {
-		qDebug() << diff << " " << v1_.index << " " << v2_.index;
+		qDebug() << "diff < 0:" << diff << " " << v1_.index << " " << v2_.index;
 	}
-	if (diff == 1) {
+	if ((diff == 1) && (v1_.column != (last_item - 1))) {
 		if (v1_.row == 0) {
 			resultappend(getTriangleByVertexAndLocalIndex(points, segments, v1_, 0));
 		}
-		else if (v1_.row == (last_item - 1)){
+		else if (v1_.row == (last_item - 1)) {
 			resultappend(getTriangleByVertexAndLocalIndex(points, segments, v1_, 5));
 		}
 		else{
@@ -192,11 +193,11 @@ const Vertex v1, const Vertex v2){
 			resultappend(getTriangleByVertexAndLocalIndex(points, segments, v1_, 5));
 		}
 	}
-	else if (diff == last_item){
-		if (v1_.column == 0){
+	else if (diff == last_item) {
+		if (v1_.column == 0) {
 			resultappend(getTriangleByVertexAndLocalIndex(points, segments, v1_, 0));
 		}
-		else if (v1_.column == (last_item - 1)){
+		else if (v1_.column == (last_item - 1)) {
 			resultappend(getTriangleByVertexAndLocalIndex(points, segments, v1_, 1));
 		}
 		else{
@@ -204,7 +205,7 @@ const Vertex v1, const Vertex v2){
 			resultappend(getTriangleByVertexAndLocalIndex(points, segments, v1_, 1));
 		}
 	}
-	else if (diff == (last_item - 1)) {
+	else if ((diff == (last_item - 1)) && (v1_.column != 0)) {
 		//qDebug() << "My vertices are" << v1 << v2;
 		resultappend(getTriangleByVertexAndLocalIndex(points, segments, v1_, 1));
 		resultappend(getTriangleByVertexAndLocalIndex(points, segments, v1_, 2));
@@ -265,44 +266,45 @@ TriangleList getSurroundingTriangles (QPointF * const points, const quint32 segm
 	}
 	return result;
 }
-Triangle getTriangleByVertexAndLocalIndex (QPointF * const points, const quint32 segments, const Vertex v, const quint32 index) {
+Triangle getTriangleByVertexAndLocalIndex (QPointF * const points, const quint32 segments, const Vertex v, const quint32 triIndex) {
 	Triangle result;
+	const quint32 row(v.row), column(v.column), index(v.index);
 	Vertex a, b, c;
-	switch(index) {
+	switch(triIndex) {
 		case 0:
-			a = getVertex(v.row, v.column, v.index);
-			b = getVertex(v.row + 1, v.column, getVertexIndex(segments, v.row + 1, v.column));
-			c = getVertex(v.row, v.column + 1, getVertexIndex(segments, v.row, v.column + 1));
+			a = getVertex(row, column, index);
+			b = getVertex(row + 1, column, getVertexIndex(segments, row + 1, column));
+			c = getVertex(row, column + 1, getVertexIndex(segments, row, column + 1));
 			result = Triangle(points, segments, a, b, c);
 			break;
 		case 1:
-			a = getVertex(v.row, v.column, v.index);
-			b = getVertex(v.row + 1, v.column - 1, getVertexIndex(segments, v.row + 1, v.column - 1));
-			c = getVertex(v.row + 1, v.column, getVertexIndex(segments, v.row + 1, v.column));
+			a = getVertex(row, column, index);
+			b = getVertex(row + 1, column - 1, getVertexIndex(segments, row + 1, column - 1));
+			c = getVertex(row + 1, column, getVertexIndex(segments, row + 1, column));
 			result = Triangle(points, segments, a, b, c);
 			break;
 		case 2:
-			a = getVertex(v.row, v.column, v.index);
-			b = getVertex(v.row, v.column - 1, getVertexIndex(segments, v.row, v.column - 1));
-			c = getVertex(v.row + 1, v.column - 1, getVertexIndex(segments, v.row + 1, v.column - 1));
+			a = getVertex(row, column, index);
+			b = getVertex(row, column - 1, getVertexIndex(segments, row, column - 1));
+			c = getVertex(row + 1, column - 1, getVertexIndex(segments, row + 1, column - 1));
 			result = Triangle(points, segments, a, b, c);
 			break;
 		case 3:
-			a = getVertex(v.row, v.column, v.index);
-			b = getVertex(v.row - 1, v.column, getVertexIndex(segments, v.row - 1, v.column));
-			c = getVertex(v.row, v.column - 1, getVertexIndex(segments, v.row, v.column - 1));
+			a = getVertex(row, column, index);
+			b = getVertex(row - 1, column, getVertexIndex(segments, row - 1, column));
+			c = getVertex(row, column - 1, getVertexIndex(segments, row, column - 1));
 			result = Triangle(points, segments, a, b, c);
 			break;
 		case 4:
-			a = getVertex(v.row, v.column, v.index);
-			b = getVertex(v.row - 1, v.column + 1, getVertexIndex(segments, v.row - 1, v.column + 1));
-			c = getVertex(v.row - 1, v.column, getVertexIndex(segments, v.row - 1, v.column));
+			a = getVertex(row, column, index);
+			b = getVertex(row - 1, column + 1, getVertexIndex(segments, row - 1, column + 1));
+			c = getVertex(row - 1, column, getVertexIndex(segments, row - 1, column));
 			result = Triangle(points, segments, a, b, c);
 			break;
 		case 5:
-			a = getVertex(v.row, v.column, v.index);
-			b = getVertex(v.row, v.column + 1, getVertexIndex(segments, v.row, v.column + 1));
-			c = getVertex(v.row - 1, v.column + 1, getVertexIndex(segments, v.row - 1, v.column + 1));
+			a = getVertex(row, column, index);
+			b = getVertex(row, column + 1, getVertexIndex(segments, row, column + 1));
+			c = getVertex(row - 1, column + 1, getVertexIndex(segments, row - 1, column + 1));
 			result = Triangle(points, segments, a, b, c);
 			break;
 		default:

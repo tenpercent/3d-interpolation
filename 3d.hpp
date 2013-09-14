@@ -10,13 +10,19 @@ public:
 	Vertex(): 
 		index (0), row (0), column (0)
 	{}
+	/*
+	~Vertex():
+	{}
+	*/
 	Vertex (const quint32 row, const quint32 column, const quint32 index): 
 		index(index), row(row), column(column)
 	{}
+	/*
 	Vertex (const Vertex& v):
 		index(v.index), row(v.row), column(v.column)
 	{}
-//	inline Vertex& operator= (const Vertex & v);
+	*/
+ 	//inline Vertex& operator= (const Vertex & v);
 };
 /*
 inline Vertex& Vertex::operator= (const Vertex &v){

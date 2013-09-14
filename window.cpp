@@ -187,13 +187,12 @@ void DrawArea::update(bool firstRun) {
 	pthread_cond_wait(&condvar_tomf, &mutex);
 	
 	QTextStream(stdout) << "Filling completed" << endl;
-	QTextStream(stdout) << "Left part:" << endl;
+	QTextStream(stdout) << "Left part & indices:" << endl;
 	for (i = 0; i < calcPoints + nzCount + 1; ++i) {
-		QTextStream(stdout) << matrix->elements[i] << " " << endl;
+		QTextStream(stdout) << matrix->elements[i] << " " << matrix->indices[i] << endl;
 	}
-	QTextStream(stdout) << "Indices:" << endl;
-	for (i = 0; i < calcPoints + nzCount + 1; ++i) {
-		QTextStream(stdout) << matrix->indices[i] << " " << endl;
+	for (i = 0; i < calcPoints; ++i) {
+		QTextStream(stdout) << locnzc[i] << " ";
 	}
 	QTextStream(stdout) << "Right part:" << endl;
 	for (i = 0; i < calcPoints; ++i) {

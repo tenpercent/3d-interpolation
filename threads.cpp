@@ -1,4 +1,5 @@
 #include "threads.hpp"
+#include <QTextStream>
 
 void synchronize(Args *a) {
 	pthread_mutex_lock(a->mutex);
@@ -64,6 +65,7 @@ void taskFillMatrix(Args *a) {
 	Vertex vertex1, vertex2;
 	QPointF point1, point2;
 	QPointF intPoints[3];
+	int count = 0;
 	for (quint32 i = 0; i < msize; ++i) {
 		if (i % a->threads != a->thread) {
 			ind += a->locnzc[i];
@@ -106,6 +108,10 @@ void taskFillMatrix(Args *a) {
 				triangleList = getCommonTriangles(a->points, a->segments, vertex1, vertex2);
 				if (triangleList.isEmpty()) {
 					continue;
+				}
+				if (i==0){
+					++count;
+					QTextStream(stdout) << "count: " << count << endl;
 				}
 				for (int k = 0; k < triangleList.size(); ++k) {
 					polynom = polynomMultiply(
