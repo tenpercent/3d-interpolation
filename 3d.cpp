@@ -10,13 +10,18 @@
 #define NORMALIZE_ANGLE(phi) (phi > 180) ? (360 - phi) : phi
 #define EPS .02
 
-void getPoints (QPointF **points) {
-	//code hard
-	(*points) = new QPointF[3];
-	(*points)[0] = QPointF(0., 0.);
-	(*points)[1] = QPointF(1., 0.);
-	(*points)[2] = QPointF(0., 1.);
-	return;
+void getPoints(QPointF **points) {
+	const quint32 size = 3;
+	QFile coordinatesFile("coordinates.txt");
+	coordinatesFile.open(QFile::ReadOnly);
+	QTextStream stream(&coordinatesFile);
+	*points = new QPointF[size];
+	qreal x, y;
+	for (quint32 i = 0; i < size; ++i) {
+		stream >> x >> y;
+		(*points)[i] = QPointF(x, y);
+	}
+	coordinatesFile.close();
 }
 
 quint32 getVertexIndex (const quint32 segments, const quint32 row, const quint32 column){

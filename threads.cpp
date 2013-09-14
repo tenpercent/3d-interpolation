@@ -138,7 +138,7 @@ void taskFillValues(Args *a) {
 	QPointF point;
 	for (j = a->thread; j < meshDrawSize; j += a->threads) {
 		a->values[j] = 0;
-		point = getPointFromVertex(a->points, a->drawSegments, getVertexByIndex(a->segments, j));
+		point = getPointFromVertex(a->points, a->drawSegments, getVertexByIndex(a->drawSegments, j));
 		for (i = 0; i < meshCalcSize; ++i) {
 			phi = phiFunctionGetByVertexIndex(a->points, a->segments, point, i);
 			a->values[j] += a->alphas[i] * phi;

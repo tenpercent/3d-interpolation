@@ -277,6 +277,22 @@ double f(DrawArea *, QPointF, Vertex)) {
 		glEnd();
 	}
 }
+void DrawArea::drawOXY() {
+	quint32 drawTriangles = 2 * drawSegments * drawSegments;
+	const GLfloat color[4] = {0., 0., 0., 1.}; 
+	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, color);
+	for (quint32 i = 0; i < drawTriangles; ++i) {
+		Triangle triangle = getTriangleByIndex (points, drawSegments, i);
+		glBegin(GL_LINE_STRIP);
+
+		glVertex3f(triangle[0].x() - .5, triangle[0].y() - .5, 0);
+		glVertex3f(triangle[1].x() - .5, triangle[1].y() - .5, 0);
+		glVertex3f(triangle[2].x() - .5, triangle[2].y() - .5, 0);
+		glVertex3f(triangle[0].x() - .5, triangle[0].y() - .5, 0);
+
+		glEnd();
+	}
+}
 
 void DrawArea::initializeGL() {
 	qglClearColor(QPalette().color(QPalette::Window));
@@ -304,6 +320,7 @@ void DrawArea::draw(const GLfloat *surfaceColor, const GLfloat *meshColor,
 {
 	drawSurface(surfaceColor, f);
 	drawMesh(meshColor, f);
+	drawOXY();
 }
 
 void DrawArea::paintGL() {

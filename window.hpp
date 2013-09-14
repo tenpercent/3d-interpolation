@@ -61,6 +61,7 @@ private:
               double f(DrawArea *, QPointF, Vertex));
 	void drawSurface(const GLfloat *color, double f(DrawArea *, QPointF, Vertex));
 	void drawMesh(const GLfloat *color, double f(DrawArea *, QPointF, Vertex));
+	void drawOXY();
 	void initializeGL();
 	void resizeGL(int width, int height);
 	void paintGL();
