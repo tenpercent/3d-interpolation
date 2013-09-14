@@ -224,19 +224,19 @@ void DrawArea::update(bool firstRun) {
 }
 //???
 void DrawArea::updateResidual() {
-	double residual = 0, value, phi;
-	uint calcPoints = (calcSegments + 1) * (calcSegments + 1);
+	qreal residual (0), value (0), phi (0);
+	quint32 calcPoints = (calcSegments + 1) * (calcSegments + 1);
 	QPointF point;
-	quint32 i, j, k;
-	const double residualSegments (42.);
+	const quint32 residualSegments (42);
 	//const double residualPoints (residualSegments * residualSegments);
-	for (i = 0; i <= residualSegments; ++i) {
-		for(j = 0; j <= residualSegments; ++j) {
+	for (quint32 i = 1; i <= residualSegments - 1; ++i) {
+		for(quint32 j = 1; j <= residualSegments - 1; ++j) {
 			value = 0.;
 			point = getPointByMeshCoordinates (points, residualSegments, i, j);
-			for (k = 0; k < calcPoints; ++k) {
+			for (quint32 k = 0; k < calcPoints; ++k) {
 				phi = phiFunctionGetByVertexIndex (points, calcSegments, point, k);
-				value += alphas[i] * phi;
+				//value += alphas[i] * phi;
+				value += alphas[k] * phi;
 			}
 			value = qAbs(value - function(point.x(), point.y()));
 			residual = qMax(value, residual);
