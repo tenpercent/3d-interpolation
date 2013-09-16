@@ -336,11 +336,17 @@ void DrawArea::paintGL() {
 	glRotatef(xRot, 1.0f, 0.0f, 0.0f);
 	glRotatef(yRot, 0.0f, 1.0f, 0.0f);
 	glRotatef(zRot, 0.0f, 0.0f, 1.0f);
+	
+	GLfloat light0_position[] = {0., 0., 1., 0.};
+	GLfloat diffuse[] = {1., 1., 1., 0.2};
+
 	glEnable(GL_LIGHTING);
-	glLightfv(GL_LIGHT1, GL_AMBIENT, LightAmbient);
-	glLightfv(GL_LIGHT1, GL_DIFFUSE, LightDiffuse);
-	glLightfv(GL_LIGHT1, GL_POSITION, LightPosition);
-	glEnable(GL_LIGHT1);
+
+	glLightfv(GL_LIGHT0, GL_POSITION, light0_position);
+	glLightfv(GL_LIGHT0, GL_AMBIENT, LightAmbient);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse);
+	glEnable(GL_LIGHT0);
+
 	DrawableFlags flags = drawableFlags();
 	if (flags & DrawFunction)
 		draw(goldColor, blueColor, origFunction);
