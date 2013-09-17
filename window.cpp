@@ -7,12 +7,11 @@
 #include "window.hpp"
 #include "function.hpp"
 
-#define VERTEX(p, v) point = p; glVertex3f(point.x()-.5, point.y()-.5, f(this, point, v))
+#ifdef SHIFT_VERTICAL
+	#define VERTEX(p, v) point = p; glVertex3f(point.x() - 1., point.y() - 1., f(this, point, v) - average)
+#endif
+#define VERTEX(p, v) point = p; glVertex3f(point.x() - 1., point.y() - 1., f(this, point, v))
 #define WINDOW ((MyMainWindow *)parentWidget())
-
-static const GLfloat LightPosition[4] = {0.0f, 0.0f, 10.0f, 1.0f};
-static const GLfloat LightAmbient[4] = {0.5f, 0.5f, 0.5f, 1.0f};
-static const GLfloat LightDiffuse[4] = {1.0f, 1.0f, 1.0f, 1.0f};
 
 static const GLfloat goldColor[3] = {0.85f, 0.85f, 0.25f};
 static const GLfloat lightBlueColor[3] = {0.4f, 0.4f, 1.0f};
@@ -160,18 +159,24 @@ void DrawArea::update(bool firstRun) {
 	pthread_cond_broadcast(&condvar_totf);
 	pthread_cond_wait(&condvar_tomf, &mutex);
 	
-	nzCount = 0;
+	nzCount = 0; 
+/*
 	QFile debugF ("debug");
 	debugF.open(QFile::WriteOnly);
 	QTextStream debugTS (&debugF);
+*/
 	for (i = 0; i < calcPoints; ++i){
 		nzCount += locnzc[i];
+/*
 		debugTS << locnzc[i] << " ";
 		if (!((i + 1)%(calcSegments + 1))){
 			debugTS << endl;
 		}
+*/
 	}
+/*
 	debugF.close();
+*/
 	QTextStream(stdout) << "\b\b\b" << nzCount << endl;
 	QTextStream(stdout) << "Start filling matrix" << endl;
 	QTextStream(stdout).flush();
@@ -187,6 +192,7 @@ void DrawArea::update(bool firstRun) {
 	pthread_cond_wait(&condvar_tomf, &mutex);
 	
 	QTextStream(stdout) << "Filling completed" << endl;
+	/*
 	QTextStream(stdout) << "Left part & indices:" << endl;
 	for (i = 0; i < calcPoints + nzCount + 1; ++i) {
 		QTextStream(stdout) << matrix->elements[i] << " " << matrix->indices[i] << endl;
@@ -194,10 +200,12 @@ void DrawArea::update(bool firstRun) {
 	for (i = 0; i < calcPoints; ++i) {
 		QTextStream(stdout) << locnzc[i] << " ";
 	}
+	
 	QTextStream(stdout) << "Right part:" << endl;
 	for (i = 0; i < calcPoints; ++i) {
 		QTextStream(stdout) << matrix->rightCol[i] << " " << endl;
 	}
+	*/
 	QTextStream(stdout) << "Solving system: ...";
 	QTextStream(stdout).flush();
 
@@ -227,10 +235,10 @@ void DrawArea::updateResidual() {
 	qreal residual (0), value (0), phi (0);
 	quint32 calcPoints = (calcSegments + 1) * (calcSegments + 1);
 	QPointF point;
-	const quint32 residualSegments (42);
+	const quint32 residualSegments (calcSegments + 1);
 	//const double residualPoints (residualSegments * residualSegments);
-	for (quint32 i = 1; i <= residualSegments - 1; ++i) {
-		for(quint32 j = 1; j <= residualSegments - 1; ++j) {
+	for (quint32 i = 0; i <= residualSegments; ++i) {
+		for(quint32 j = 0; j <= residualSegments; ++j) {
 			value = 0.;
 			point = getPointByMeshCoordinates (points, residualSegments, i, j);
 			for (quint32 k = 0; k < calcPoints; ++k) {
@@ -249,6 +257,14 @@ void DrawArea::drawSurface(const GLfloat *color,
 double f(DrawArea *, QPointF, Vertex)) {
 	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, color);
 	glBegin(GL_TRIANGLES);
+#ifdef SHIFT_VERTICAL
+	const qreal average = 1./4 * (
+		f(this, points[0], getVertexByIndex(drawSegments, 0)) + 
+		f(this, points[2], getVertexByIndex(drawSegments, drawSegments)) + 
+		f(this, points[1], getVertexByIndex(drawSegments, drawSegments * (drawSegments + 1 ))) + 
+		f(this, points[1] + points[2] - points[0], getVertexByIndex(drawSegments, drawSegments * (drawSegments + 2)))
+		);
+#endif
 	QPointF point;
 	quint32 drawTriangles = 2 * drawSegments * drawSegments;
 	for (quint32 i = 0; i < drawTriangles; ++i) {
@@ -266,6 +282,14 @@ double f(DrawArea *, QPointF, Vertex)) {
 	quint32 drawTriangles = 2 * drawSegments * drawSegments;
 	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, color);
 	QPointF point;
+#ifdef SHIFT_VERTICAL
+	const qreal average = 1./4 * (
+		f(this, points[0], getVertexByIndex(drawSegments, 0)) + 
+		f(this, points[2], getVertexByIndex(drawSegments, drawSegments)) + 
+		f(this, points[1], getVertexByIndex(drawSegments, drawSegments * (drawSegments + 1 ))) + 
+		f(this, points[1] + points[2] - points[0], getVertexByIndex(drawSegments, drawSegments * (drawSegments + 2)))
+		);
+#endif
 	for (quint32 i = 0; i < drawTriangles; ++i) {
 		//Triangle triangle = getTriangle(points, size, drawLayers, i, &center);
 		Triangle triangle = getTriangleByIndex (points, drawSegments, i);
@@ -277,20 +301,36 @@ double f(DrawArea *, QPointF, Vertex)) {
 		glEnd();
 	}
 }
-void DrawArea::drawOXY() {
-	quint32 drawTriangles = 2 * drawSegments * drawSegments;
+void DrawArea::drawOXYProjection() {
 	const GLfloat color[4] = {0., 0., 0., 1.}; 
 	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, color);
-	for (quint32 i = 0; i < drawTriangles; ++i) {
-		Triangle triangle = getTriangleByIndex (points, drawSegments, i);
-		glBegin(GL_LINE_STRIP);
+	for (quint32 i = 0; i < drawSegments; ++i) {
+		for (quint32 j = 0; j < drawSegments; ++j){
+			glBegin(GL_LINE_STRIP);
 
-		glVertex3f(triangle[0].x() - .5, triangle[0].y() - .5, 0);
-		glVertex3f(triangle[1].x() - .5, triangle[1].y() - .5, 0);
-		glVertex3f(triangle[2].x() - .5, triangle[2].y() - .5, 0);
-		glVertex3f(triangle[0].x() - .5, triangle[0].y() - .5, 0);
+			glVertex3f(
+				getPointByMeshCoordinates(points, drawSegments, i, j).x() - 1., 
+				getPointByMeshCoordinates(points, drawSegments, i, j).y() - 1., 
+				0.);
+			glVertex3f(
+				getPointByMeshCoordinates(points, drawSegments, i + 1, j).x() - 1., 
+				getPointByMeshCoordinates(points, drawSegments, i + 1, j).y() - 1., 
+				0.);
+			glVertex3f(
+				getPointByMeshCoordinates(points, drawSegments, i + 1, j + 1).x() - 1., 
+				getPointByMeshCoordinates(points, drawSegments, i + 1, j + 1).y() - 1., 
+				0.);
+			glVertex3f(
+				getPointByMeshCoordinates(points, drawSegments, i, j + 1).x() - 1., 
+				getPointByMeshCoordinates(points, drawSegments, i, j + 1).y() - 1., 
+				0.);
+			glVertex3f(
+				getPointByMeshCoordinates(points, drawSegments, i, j).x() - 1., 
+				getPointByMeshCoordinates(points, drawSegments, i, j).y() - 1., 
+				0.);
 
-		glEnd();
+			glEnd();
+		}
 	}
 }
 
@@ -320,7 +360,7 @@ void DrawArea::draw(const GLfloat *surfaceColor, const GLfloat *meshColor,
 {
 	drawSurface(surfaceColor, f);
 	drawMesh(meshColor, f);
-	drawOXY();
+	drawOXYProjection();
 }
 
 void DrawArea::paintGL() {
@@ -329,22 +369,23 @@ void DrawArea::paintGL() {
 		quint32(WINDOW->drawLayersSpinBox.value()) != drawSegments
 	)
 		update();
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	glScalef(nSca, nSca, nSca);
-	glRotatef(xRot, 1.0f, 0.0f, 0.0f);
-	glRotatef(yRot, 0.0f, 1.0f, 0.0f);
-	glRotatef(zRot, 0.0f, 0.0f, 1.0f);
+	glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glMatrixMode (GL_MODELVIEW);
+	glLoadIdentity ();
+	glScalef (nSca, nSca, nSca);
+	glRotatef (xRot, 1.0f, 0.0f, 0.0f);
+	glRotatef (yRot, 0.0f, 1.0f, 0.0f);
+	glRotatef (zRot, 0.0f, 0.0f, 1.0f);
 	
-	GLfloat light0_position[] = {0., 0., 1., 0.};
-	GLfloat diffuse[] = {1., 1., 1., 0.2};
+	const GLfloat light0_position[4] = {0., 0., 1., 0.};
+	const GLfloat light0_diffuse[4] = {1., 1., 1., .2};
+	const GLfloat light0_ambient[4] = {.2, .2, .2, 1.};
 
 	glEnable(GL_LIGHTING);
 
 	glLightfv(GL_LIGHT0, GL_POSITION, light0_position);
-	glLightfv(GL_LIGHT0, GL_AMBIENT, LightAmbient);
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse);
+	glLightfv(GL_LIGHT0, GL_AMBIENT, light0_ambient);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, light0_diffuse);
 	glEnable(GL_LIGHT0);
 
 	DrawableFlags flags = drawableFlags();
@@ -361,8 +402,8 @@ void DrawArea::mousePressEvent(QMouseEvent *event) {
 }
 
 void DrawArea::mouseMoveEvent(QMouseEvent *event) {
-	xRot += 180/nSca*(GLfloat)(event->y() - mousePosition.y()) / height();
-	zRot += 180/nSca*(GLfloat)(event->x() - mousePosition.x()) / width();
+	xRot += 180 / nSca * (GLfloat)(event->y() - mousePosition.y()) / height();
+	zRot += 180 / nSca * (GLfloat)(event->x() - mousePosition.x()) / width();
 
 	mousePosition = event->pos();
 	updateGL();

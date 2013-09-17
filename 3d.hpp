@@ -69,7 +69,7 @@ struct Monom {
 typedef QList<Triangle> TriangleList;
 typedef QList<Monom> Polynom;
 
-void getPoints (QPointF **points);
+quint32 getPoints (QPointF **points);
 
 double phiFunctionGetByVertexIndex (QPointF * const points, const quint32 segments, const QPointF point, const quint32 vertexNumber);
 

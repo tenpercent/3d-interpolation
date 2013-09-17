@@ -2,6 +2,7 @@
 #include <QLineF>
 #include <QTextStream>
 #include <QDebug>
+#include <QMessageBox>
 #include <qmath.h>
 
 #include "function.hpp"
@@ -10,18 +11,42 @@
 #define NORMALIZE_ANGLE(phi) (phi > 180) ? (360 - phi) : phi
 #define EPS .02
 
-void getPoints(QPointF **points) {
+quint32 getPoints(QPointF **points) {
 	const quint32 size = 3;
 	QFile coordinatesFile("coordinates.txt");
 	coordinatesFile.open(QFile::ReadOnly);
 	QTextStream stream(&coordinatesFile);
 	*points = new QPointF[size];
 	qreal x, y;
+	/*
 	for (quint32 i = 0; i < size; ++i) {
 		stream >> x >> y;
 		(*points)[i] = QPointF(x, y);
+	}*/
+	quint32 i(0);
+	while (!(stream.atEnd()) && (i < size)) {
+		stream >> x >> y;
+		(*points)[i] = QPointF(x, y);
+		++i;
 	}
 	coordinatesFile.close();
+	if (i < size) {
+		QMessageBox messageBox;
+		messageBox.setText("Please change coordinates.txt file");
+		messageBox.setInformativeText(QString("The parallelogram can't be constructed:\ntoo few points (%1)").arg(i));
+		messageBox.exec();
+		return 1;
+	}	
+	const qreal vectorProduct = ((*points)[2].y() - (*points)[0].y()) * ((*points)[1].x() - (*points)[0].x()) - 
+								((*points)[2].x() - (*points)[0].x()) * ((*points)[1].y() - (*points)[0].y());
+	if (qAbs(vectorProduct) < EPS) {
+		QMessageBox messageBox;
+		messageBox.setText("Please change coordinates.txt file");
+		messageBox.setInformativeText("The parallelogram can't be constructed:\npoints lay on one line");
+		messageBox.exec();
+		return 2;
+	}
+	return 0;
 }
 
 quint32 getVertexIndex (const quint32 segments, const quint32 row, const quint32 column){
@@ -44,15 +69,7 @@ QPointF getPointByMeshCoordinates (QPointF * const points, const quint32 segment
 QPointF getPointFromVertex (QPointF * const points, const quint32 segments, const Vertex v) {
 	return getPointByMeshCoordinates (points, segments, v.row, v.column);
 }
-/* 
-Vertex getVertex (const quint32 row, const quint32 column, const quint32 index) {
-	Vertex v;
-	v.row = row;
-	v.column = column;
-	v.index = index;
-	return v;
-}
-*/
+
 Vertex getVertex (const quint32 row, const quint32 column, const quint32 index) {
 	return Vertex (row, column, index);
 }
@@ -171,49 +188,50 @@ Polynom phiFunctionPolynom (const Triangle &triangle, const QPointF vertex) {
 	return result;
 }
 
-#define resultappend(i) qDebug() << __LINE__; result.append(i)
+//#define resultappend(i) qDebug() << __LINE__; result.append(i)
 
 TriangleList getCommonTriangles (QPointF * const points, const quint32 segments, 
 const Vertex v1, const Vertex v2){
 	Vertex v1_ = v1;
 	Vertex v2_ = v2;
 	TriangleList result;
-	const qint32 last_item (segments + 1);
+	const quint32 last_item (segments + 1);
 	if (v1_.index > v2_.index){
 		qSwap(v1_, v2_);
 	}
-	const qint32 diff (v2_.index - v1_.index);
-	if (diff < 0) {
-		qDebug() << "diff < 0:" << diff << " " << v1_.index << " " << v2_.index;
+	const qint32 diff_i (v2_.index - v1_.index);
+	if (diff_i < 0) {
+		qDebug() << "diff < 0:" << diff_i << " " << v1_.index << " " << v2_.index;
 	}
+	const quint32 diff (diff_i);
 	if ((diff == 1) && (v1_.column != (last_item - 1))) {
 		if (v1_.row == 0) {
-			resultappend(getTriangleByVertexAndLocalIndex(points, segments, v1_, 0));
+			result.append(getTriangleByVertexAndLocalIndex(points, segments, v1_, 0));
 		}
 		else if (v1_.row == (last_item - 1)) {
-			resultappend(getTriangleByVertexAndLocalIndex(points, segments, v1_, 5));
+			result.append(getTriangleByVertexAndLocalIndex(points, segments, v1_, 5));
 		}
 		else{
-			resultappend(getTriangleByVertexAndLocalIndex(points, segments, v1_, 0));
-			resultappend(getTriangleByVertexAndLocalIndex(points, segments, v1_, 5));
+			result.append(getTriangleByVertexAndLocalIndex(points, segments, v1_, 0));
+			result.append(getTriangleByVertexAndLocalIndex(points, segments, v1_, 5));
 		}
 	}
 	else if (diff == last_item) {
 		if (v1_.column == 0) {
-			resultappend(getTriangleByVertexAndLocalIndex(points, segments, v1_, 0));
+			result.append(getTriangleByVertexAndLocalIndex(points, segments, v1_, 0));
 		}
 		else if (v1_.column == (last_item - 1)) {
-			resultappend(getTriangleByVertexAndLocalIndex(points, segments, v1_, 1));
+			result.append(getTriangleByVertexAndLocalIndex(points, segments, v1_, 1));
 		}
 		else{
-			resultappend(getTriangleByVertexAndLocalIndex(points, segments, v1_, 0));
-			resultappend(getTriangleByVertexAndLocalIndex(points, segments, v1_, 1));
+			result.append(getTriangleByVertexAndLocalIndex(points, segments, v1_, 0));
+			result.append(getTriangleByVertexAndLocalIndex(points, segments, v1_, 1));
 		}
 	}
 	else if ((diff == (last_item - 1)) && (v1_.column != 0)) {
 		//qDebug() << "My vertices are" << v1 << v2;
-		resultappend(getTriangleByVertexAndLocalIndex(points, segments, v1_, 1));
-		resultappend(getTriangleByVertexAndLocalIndex(points, segments, v1_, 2));
+		result.append(getTriangleByVertexAndLocalIndex(points, segments, v1_, 1));
+		result.append(getTriangleByVertexAndLocalIndex(points, segments, v1_, 2));
 	}
 	return result;
 }

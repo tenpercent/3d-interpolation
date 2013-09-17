@@ -65,7 +65,6 @@ void taskFillMatrix(Args *a) {
 	Vertex vertex1, vertex2;
 	QPointF point1, point2;
 	QPointF intPoints[3];
-	int count = 0;
 	for (quint32 i = 0; i < msize; ++i) {
 		if (i % a->threads != a->thread) {
 			ind += a->locnzc[i];
