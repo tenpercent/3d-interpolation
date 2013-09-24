@@ -245,7 +245,7 @@ const Vertex v1, const Vertex v2){
 	return result;
 }
 
-TriangleList getSurroundingTriangles (QPointF * const points, const quint32 segments, const Vertex v1) {
+TriangleList getSurroundingTriangles (QPointF * const points, const quint32 segments, const Vertex v1) { //bugs bugs bugs
 	TriangleList result;
 	const quint32 total_rows (segments + 1);
 	if (v1.row == 0) {
@@ -298,6 +298,7 @@ TriangleList getSurroundingTriangles (QPointF * const points, const quint32 segm
 	}
 	return result;
 }
+
 Triangle getTriangleByVertexAndLocalIndex (QPointF * const points, const quint32 segments, const Vertex v, const quint32 triIndex) {
 	Triangle result;
 	const quint32 row(v.row);
@@ -355,10 +356,6 @@ Triangle getTriangleByVertexAndLocalIndex (QPointF * const points, const quint32
 				qDebug() << "alarm! (case 4)" << endl;
 			}
 			a = getVertex(row, column, index);
-			/*
-			b = getVertex(row, column + 1, getVertexIndex(segments, row, column + 1));
-			c = getVertex(row - 1, column + 1, getVertexIndex(segments, row - 1, column + 1));
-			*/
 			c = getVertex(row, column + 1, getVertexIndex(segments, row, column + 1));
 			b = getVertex(row - 1, column + 1, getVertexIndex(segments, row - 1, column + 1));
 			result = Triangle(points, segments, a, b, c);
@@ -456,7 +453,7 @@ quint32 getSurroundingNeighborCount (const quint32 segments, const quint32 index
 			return 6;
 		}
 	}
-	qDebug() << "@getSurroundingNeighborCount we left something..." << endl;
+//	qDebug() << "@getSurroundingNeighborCount we left something..." << endl;
 	return 0;
 }
 quint32 getCommonNeighborCount (const quint32 segments, const quint32 i_index, const quint32 j_index) {

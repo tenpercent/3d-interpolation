@@ -119,11 +119,6 @@ void DrawArea::update(bool firstRun) {
 	calcSegments = WINDOW->calcLayersSpinBox.value();
 	drawSegments = WINDOW->drawLayersSpinBox.value();
 	threads = WINDOW->threadsSpinBox.value();
-	/*
-	alphas = new double[POINTS(calcLayers, size)];
-	locnzc = new quint32[POINTS(calcLayers, size)];
-	values = new double[POINTS(drawLayers, size)];
-	*/
 	quint32 calcPoints = (calcSegments + 1) * (calcSegments + 1);
 	quint32 drawPoints = (drawSegments + 1) * (drawSegments + 1);
 	alphas = new qreal[calcPoints];
@@ -223,14 +218,12 @@ void DrawArea::updateResidual() {
 	quint32 calcPoints = (calcSegments + 1) * (calcSegments + 1);
 	QPointF point;
 	const quint32 residualSegments (calcSegments + 1);
-	//const double residualPoints (residualSegments * residualSegments);
 	for (quint32 i = 0; i <= residualSegments; ++i) {
 		for(quint32 j = 0; j <= residualSegments; ++j) {
 			value = 0.;
 			point = getPointByMeshCoordinates (points, residualSegments, i, j);
 			for (quint32 k = 0; k < calcPoints; ++k) {
 				phi = phiFunctionGetByVertexIndex (points, calcSegments, point, k);
-				//value += alphas[i] * phi;
 				value += alphas[k] * phi;
 			}
 			local_residual = qAbs(value - function(point.x(), point.y()));
@@ -255,7 +248,6 @@ qreal f(DrawArea *, QPointF, Vertex)) {
 	QPointF point;
 	quint32 drawTriangles = 2 * drawSegments * drawSegments;
 	for (quint32 i = 0; i < drawTriangles; ++i) {
-		//Triangle triangle = getTriangle(points, size, drawLayers, i, &center);
 		Triangle triangle = getTriangleByIndex(points, drawSegments, i);
 		VERTEX(triangle[0], triangle.a);
 		VERTEX(triangle[1], triangle.b);
@@ -278,7 +270,6 @@ qreal f(DrawArea *, QPointF, Vertex)) {
 		);
 #endif
 	for (quint32 i = 0; i < drawTriangles; ++i) {
-		//Triangle triangle = getTriangle(points, size, drawLayers, i, &center);
 		Triangle triangle = getTriangleByIndex (points, drawSegments, i);
 		glBegin(GL_LINE_STRIP);
 		VERTEX(triangle[0], triangle.a);
