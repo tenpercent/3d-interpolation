@@ -18,6 +18,7 @@ static const GLfloat lightBlueColor[3] = {0.4f, 0.4f, 1.0f};
 static const GLfloat blueColor[3] = {0.0f, 0.0f, 1.0f};
 static const GLfloat redColor[3]  = {1.0f, 0.4f, 0.4f};
 static const GLfloat orangeColor[3]  = {1.0f, 0.5f, 0.2f};
+static const GLfloat greenColor[3] = {0.2f, 1.0f, 0.6f};
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t condvar_tomf = PTHREAD_COND_INITIALIZER;
@@ -42,12 +43,12 @@ MyMainWindow::MyMainWindow():
 	calcLayersLabel.setMargin(5);
 	drawLayersLabel.setMargin(5);
 	threadsLabel.setMargin(5);
-	calcLayersSpinBox.setRange(1, 50);
-	drawLayersSpinBox.setRange(1, 50);
+	calcLayersSpinBox.setRange(1, 100);
+	drawLayersSpinBox.setRange(1, 40);
 	threadsSpinBox.setRange(1, 10);
 	calcLayersSpinBox.setValue(10);
 	drawLayersSpinBox.setValue(10);
-	threadsSpinBox.setValue(4);
+	threadsSpinBox.setValue(1);
 	drawArea.update(true);
 	// prepare actions
 	functionAction.setCheckable(true);
@@ -97,16 +98,16 @@ DrawableFlags DrawArea::drawableFlags() const {
 	return WINDOW->drawableFlags();
 }
 
-double origFunction(DrawArea *, QPointF p, Vertex) {
+qreal origFunction(DrawArea *, QPointF p, Vertex) {
 	return function(p.x(), p.y());
 }
 
-double interpolationFunction(DrawArea *a, QPointF, Vertex v) {
+qreal interpolationFunction(DrawArea *a, QPointF, Vertex v) {
 	return a->values[getIndexFromVertex(v)];
 }
 
-double residualFunction(DrawArea *a, QPointF p, Vertex v) {
-	return origFunction(a, p, v) - interpolationFunction(a, p, v);
+qreal residualFunction(DrawArea *a, QPointF p, Vertex v) {
+	return qAbs(origFunction(a, p, v) - interpolationFunction(a, p, v));
 }
 
 void DrawArea::update(bool firstRun) {
@@ -125,16 +126,16 @@ void DrawArea::update(bool firstRun) {
 	*/
 	quint32 calcPoints = (calcSegments + 1) * (calcSegments + 1);
 	quint32 drawPoints = (drawSegments + 1) * (drawSegments + 1);
-	alphas = new double[calcPoints];
+	alphas = new qreal[calcPoints];
 	locnzc = new quint32[calcPoints];
-	values = new double[drawPoints];
+	values = new qreal[drawPoints];
 
 	pthread_t *thr = new pthread_t[threads];
 	Args *args = new Args[threads];
-	quint32 donethreads = 0;
-	quint32 i, nzCount;
+	quint32 donethreads(0);
+	quint32 nzCount(0);
 	pthread_mutex_lock(&mutex);
-	for (i = 0; i < threads; ++i) {
+	for (quint32 i = 0; i < threads; ++i) {
 		args[i].mutex = &mutex;
 		args[i].condvar_tomf = &condvar_tomf;
 		args[i].condvar_totf = &condvar_totf;
@@ -142,7 +143,7 @@ void DrawArea::update(bool firstRun) {
 		args[i].thread = i;
 		args[i].donethreads = &donethreads;
 		args[i].points = points;
-		args[i].segments = calcSegments;
+		args[i].calcSegments = calcSegments;
 		args[i].drawSegments = drawSegments;
 		args[i].locnzc = locnzc;
 		args[i].alphas = alphas;
@@ -152,60 +153,45 @@ void DrawArea::update(bool firstRun) {
 	}
 	// let the threads initialize
 	pthread_cond_wait(&condvar_tomf, &mutex);
-	
+
 	donethreads = 0;
 	QTextStream(stdout) << "Getting non-zero count: ...";
 	QTextStream(stdout).flush();
 	pthread_cond_broadcast(&condvar_totf);
 	pthread_cond_wait(&condvar_tomf, &mutex);
-	
-	nzCount = 0; 
-/*
-	QFile debugF ("debug");
-	debugF.open(QFile::WriteOnly);
-	QTextStream debugTS (&debugF);
-*/
-	for (i = 0; i < calcPoints; ++i){
+	nzCount = 0;
+	for (quint32 i = 0; i < calcPoints; ++i)
 		nzCount += locnzc[i];
-/*
-		debugTS << locnzc[i] << " ";
-		if (!((i + 1)%(calcSegments + 1))){
-			debugTS << endl;
-		}
-*/
-	}
-/*
-	debugF.close();
-*/
 	QTextStream(stdout) << "\b\b\b" << nzCount << endl;
 	QTextStream(stdout) << "Start filling matrix" << endl;
 	QTextStream(stdout).flush();
 	MsrMatrix *matrix = new MsrMatrix(calcPoints, nzCount);
 	QTextStream(stdout) << "Matrix initialization success!" << endl;
 	QTextStream(stdout).flush();
-	for (i = 0; i < threads; ++i) {
+	for (quint32 i = 0; i < threads; ++i) {
 		args[i].matrix = matrix;
 		args[i].task = FillAndSolveMatrix;
 	}
+
 	donethreads = 0;
 	pthread_cond_broadcast(&condvar_totf);
 	pthread_cond_wait(&condvar_tomf, &mutex);
 	
 	QTextStream(stdout) << "Filling completed" << endl;
-	/*
+/*
 	QTextStream(stdout) << "Left part & indices:" << endl;
-	for (i = 0; i < calcPoints + nzCount + 1; ++i) {
+	for (quint32 i = 0; i < calcPoints + nzCount + 1; ++i) {
 		QTextStream(stdout) << matrix->elements[i] << " " << matrix->indices[i] << endl;
 	}
-	for (i = 0; i < calcPoints; ++i) {
+	for (quint32 i = 0; i < calcPoints; ++i) {
 		QTextStream(stdout) << locnzc[i] << " ";
 	}
 	
 	QTextStream(stdout) << "Right part:" << endl;
-	for (i = 0; i < calcPoints; ++i) {
+	for (quint32 i = 0; i < calcPoints; ++i) {
 		QTextStream(stdout) << matrix->rightCol[i] << " " << endl;
 	}
-	*/
+*/
 	QTextStream(stdout) << "Solving system: ...";
 	QTextStream(stdout).flush();
 
@@ -213,8 +199,9 @@ void DrawArea::update(bool firstRun) {
 	QTextStream(stdout) << "\b\b\bsolved in " << iterations
 		<< " iterations" << endl;
 	delete matrix;
+
 	donethreads = 0;
-	for (i = 0; i < threads; ++i)
+	for (quint32 i = 0; i < threads; ++i)
 		args[i].task = FillValues;
 	QTextStream(stdout) << "Filling values array: ...";
 	QTextStream(stdout).flush();
@@ -222,17 +209,17 @@ void DrawArea::update(bool firstRun) {
 	pthread_cond_wait(&condvar_tomf, &mutex);
 	
 	QTextStream(stdout) << "\b\b\bdone" << endl;
-	for (i = 0; i < threads; ++i)
+	for (quint32 i = 0; i < threads; ++i)
 		args[i].task = FinishWork;
 	pthread_cond_broadcast(&condvar_totf);
 	pthread_mutex_unlock(&mutex);
-	for (i = 0; i < threads; ++i)
+	for (quint32 i = 0; i < threads; ++i)
 		pthread_join(thr[i], NULL);
 	updateResidual();
 }
 //???
 void DrawArea::updateResidual() {
-	qreal residual (0), value (0), phi (0);
+	qreal residual (0), value (0), phi (0), local_residual(0);
 	quint32 calcPoints = (calcSegments + 1) * (calcSegments + 1);
 	QPointF point;
 	const quint32 residualSegments (calcSegments + 1);
@@ -246,15 +233,15 @@ void DrawArea::updateResidual() {
 				//value += alphas[i] * phi;
 				value += alphas[k] * phi;
 			}
-			value = qAbs(value - function(point.x(), point.y()));
-			residual = qMax(value, residual);
+			local_residual = qAbs(value - function(point.x(), point.y()));
+			residual = qMax(local_residual, residual);
 		}
 	}
 	WINDOW->statusBar.showMessage(QString("Residual: %1").arg(residual));
 }
 
 void DrawArea::drawSurface(const GLfloat *color,
-double f(DrawArea *, QPointF, Vertex)) {
+qreal f(DrawArea *, QPointF, Vertex)) {
 	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, color);
 	glBegin(GL_TRIANGLES);
 #ifdef SHIFT_VERTICAL
@@ -278,7 +265,7 @@ double f(DrawArea *, QPointF, Vertex)) {
 }
 
 void DrawArea::drawMesh(const GLfloat *color,
-double f(DrawArea *, QPointF, Vertex)) {
+qreal f(DrawArea *, QPointF, Vertex)) {
 	quint32 drawTriangles = 2 * drawSegments * drawSegments;
 	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, color);
 	QPointF point;
@@ -337,7 +324,6 @@ void DrawArea::drawOXYProjection() {
 void DrawArea::initializeGL() {
 	qglClearColor(QPalette().color(QPalette::Window));
 	glEnable(GL_DEPTH_CLAMP);
-	//glEnable(GL_DEPTH_TEST);
 }
 
 void DrawArea::resizeGL(int width, int height) {
@@ -348,15 +334,16 @@ void DrawArea::resizeGL(int width, int height) {
 	ratio /= width;
 
 	if (width > height)
-		glOrtho(-1./ratio, 1./ratio, -1., 1., -10., 1.);
+		glOrtho(-1./ratio, 1./ratio, -1., 1., -1., 1.);
 	else
-		glOrtho(-1., 1., -ratio, ratio, -10., 1.);
+		glOrtho(-1., 1., -ratio, ratio, -1., 1.);
+
 
 	glViewport(0, 0, width, height);
 }
 
 void DrawArea::draw(const GLfloat *surfaceColor, const GLfloat *meshColor,
-                    double f(DrawArea *, QPointF, Vertex))
+                    qreal f(DrawArea *, QPointF, Vertex))
 {
 	drawSurface(surfaceColor, f);
 	drawMesh(meshColor, f);
@@ -395,6 +382,7 @@ void DrawArea::paintGL() {
 		draw(lightBlueColor, blueColor, interpolationFunction);
 	if (flags & DrawResidual)
 		draw(redColor, blueColor, residualFunction);
+
 }
 
 void DrawArea::mousePressEvent(QMouseEvent *event) {
@@ -411,6 +399,6 @@ void DrawArea::mouseMoveEvent(QMouseEvent *event) {
 
 void DrawArea::wheelEvent(QWheelEvent *event) {
 	int delta = event->delta();
-	nSca *= qExp(double(delta) / 2048);
+	nSca *= qExp(qreal(delta) / 2048);
 	repaint();
 }

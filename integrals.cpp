@@ -1,7 +1,7 @@
 #include <qmath.h>
 #include "3d.hpp"
 
-void transformateTriangle(QPointF *triangle, double *transform) {
+void transformateTriangle(QPointF *triangle, qreal *transform) {
 	QPointF a = triangle[0], b = triangle[1], c = triangle[2];
 	transform[0] = 1 / (b.x() - a.x());
 	transform[2] = -transform[0] * a.x();
@@ -9,7 +9,7 @@ void transformateTriangle(QPointF *triangle, double *transform) {
 	transform[3] = -transform[1] * a.y();
 }
 
-void addToPolynom(Polynom &p, quint32 xPow, quint32 yPow, double c) {
+void addToPolynom(Polynom &p, quint32 xPow, quint32 yPow, qreal c) {
 	if (qFuzzyIsNull(c))
 		return;
 	for (int i = 0; i < p.size(); ++i)
@@ -55,9 +55,9 @@ Polynom polynomMultiply(const Polynom &p1, const Polynom &p2) {
 	return result;
 }
 
-double polynomIntegral(const Polynom &p) {
+qreal polynomIntegral(const Polynom &p) {
 	// all xPow's should be zero
-	double result = 0;
+	qreal result = 0;
 	for (int i = 0; i < p.size(); ++i)
 		result += p.at(i).c / (1 + p.at(i).yPow);
 	return result;
@@ -75,10 +75,10 @@ Polynom polynomPower(const Polynom &p, quint32 power) {
 	return result;
 }
 
-double getIntegralForGoodTriangle(QPointF * const triangle, const Polynom &polynom) {
-	double transform[4];
+qreal getIntegralForGoodTriangle(QPointF * const triangle, const Polynom &polynom) {
+	qreal transform[4];
 	transformateTriangle(triangle, transform);
-	double newcx = transform[0] * triangle[2].x() + transform[2];
+	qreal newcx = transform[0] * triangle[2].x() + transform[2];
 	Polynom newPolynom, polynomPart1, polynomPart2, polynomBase;
 	int i, j;
 	for (i = 0; i < polynom.size(); ++i) {
@@ -97,7 +97,7 @@ double getIntegralForGoodTriangle(QPointF * const triangle, const Polynom &polyn
 		newPolynom = polynomAdd(newPolynom,
 			polynomMultiply(polynomPart1, polynomPart2));
 	}
-	double result = 0;
+	qreal result = 0;
 	for (i = 0; i < newPolynom.size(); ++i) {
 		polynomBase.clear();
 		addToPolynom(polynomBase, 0, 0, 1);
@@ -115,7 +115,7 @@ double getIntegralForGoodTriangle(QPointF * const triangle, const Polynom &polyn
 	return result;
 }
 
-double getIntegral(QPointF * const points, const Polynom &polynom) {
+qreal getIntegral(QPointF * const points, const Polynom &polynom) {
 	if (points[0].y() > points[1].y())
 		qSwap(points[0], points[1]);
 	if (points[0].y() > points[2].y())
@@ -128,8 +128,8 @@ double getIntegral(QPointF * const points, const Polynom &polynom) {
 		qSwap(points[0], points[2]);
 		return getIntegralForGoodTriangle(points, polynom);
 	}
-	double result = 0;
-	double h1 = points[1].y() - points[0].y(),
+	qreal result = 0;
+	qreal h1 = points[1].y() - points[0].y(),
 	       h2 = points[2].y() - points[1].y();
 	QPointF triangle[3];
 	triangle[0] = points[1];
@@ -140,7 +140,7 @@ double getIntegral(QPointF * const points, const Polynom &polynom) {
 	return result + getIntegralForGoodTriangle(triangle, polynom);
 }
 
-double getIntegral(const Triangle &triangle, const Polynom &polynom) {
+qreal getIntegral(const Triangle &triangle, const Polynom &polynom) {
 	QPointF points[3];
 	points[0] = triangle[0];
 	points[1] = triangle[1];

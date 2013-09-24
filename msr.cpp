@@ -1,11 +1,12 @@
 #include "msr.hpp"
+#include <QtCore/qmath.h>
 
 MsrMatrix::MsrMatrix(quint32 size, quint32 nzcount):
 	size(size),
 	nzcount(nzcount),
 	indices(new quint32[size+nzcount+1]),
-	elements(new double[size+nzcount+1]),
-	rightCol(new double[size])
+	elements(new qreal[size+nzcount+1]),
+	rightCol(new qreal[size])
 {
 	for (quint32 i = 0; i < size + nzcount + 1; ++i){
 		indices[i] = 1111;
@@ -19,7 +20,7 @@ MsrMatrix::~MsrMatrix() {
 	delete[] rightCol;
 }
 
-double MsrMatrix::getElement(quint32 i, quint32 j) const {
+qreal MsrMatrix::getElement(quint32 i, quint32 j) const {
 	quint32 index;
 	if (i == j)
 		return elements[i];
@@ -30,7 +31,7 @@ double MsrMatrix::getElement(quint32 i, quint32 j) const {
 	return 0;
 }
 
-void MsrMatrix::applyToVector(double *vector, double *newVector) const {
+void MsrMatrix::applyToVector(qreal *vector, qreal *newVector) const {
 	quint32 i, ind;
 	for (i = 0; i < size; ++i) {
 		newVector[i] = elements[i] * vector[i];
@@ -38,8 +39,8 @@ void MsrMatrix::applyToVector(double *vector, double *newVector) const {
 			newVector[i] += elements[ind] * vector[indices[ind]];
 	}
 }
-double MsrMatrix::getResidual(double *vector) const {
-	double result = 0, c;
+qreal MsrMatrix::getResidual(qreal *vector) const {
+	qreal result(0.), c;
 	quint32 i, ind;
 	for (i = 0; i < size; ++i) {
 		c = elements[i] * vector[i];
@@ -47,20 +48,20 @@ double MsrMatrix::getResidual(double *vector) const {
 			c += elements[ind] * vector[indices[ind]];
 		result += (rightCol[i] - c) * (rightCol[i] - c);
 	}
-	return result;
+	return qSqrt(result);
 }
 
-double MsrMatrix::scalarProduct(double *vector1, double *vector2) const {
-	double result = 0;
+qreal MsrMatrix::scalarProduct(qreal *vector1, qreal *vector2) const {
+	qreal result = 0;
 	for (quint32 i = 0; i < size; ++i)
 		result += vector1[i] * vector2[i];
 	return result;
 }
 
-quint32 MsrMatrix::solve(double *result) const {
-	double *r = new double[size];
-	double *p = new double[size];
-	double alpha, residual, prevResidual = 0;
+quint32 MsrMatrix::solve(qreal *result) const {
+	qreal *r = new qreal[size];
+	qreal *p = new qreal[size];
+	qreal prevResidual(0), residual, alpha;
 	quint32 i;
 	for (i = 0; i < size; ++i) {
 		result[i] = 0;

@@ -20,11 +20,11 @@ struct Args {
 	MsrMatrix *matrix;
 	QPointF *points;
 //	quint32 layers;
-	quint32 segments;
+	quint32 calcSegments;
 	quint32 drawSegments;
 	quint32 *locnzc;
-	double *alphas;
-	double *values;
+	qreal *alphas;
+	qreal *values;
 };
 
 void *tf(void *args);

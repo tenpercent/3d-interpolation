@@ -27,14 +27,15 @@ Q_OBJECT
 
 public:
 	QPointF *points;
-	double *alphas;
-	quint32 *locnzc; // local non-zero count
-	double *values;
+	qreal *alphas;
+	quint32 *locnzc;
+	qreal *values;
 	MsrMatrix *matrix;
 
 	DrawArea(QWidget *parent=0):
 		QGLWidget(parent),
-		nSca(1)
+		xRot(-30.),
+		nSca(.61)
 	{
 		getPoints(&points);
 	}
@@ -48,19 +49,19 @@ public:
 	void updateResidual();
 
 private:
-	double xRot;
-	double yRot;
-	double zRot;
-	double nSca;
+	qreal xRot;
+	qreal yRot;
+	qreal zRot;
+	qreal nSca;
 	QPoint mousePosition;
 	quint32 drawSegments;
 	quint32 calcSegments;
 	quint32 threads;
 
 	void draw(const GLfloat *surfaceColor, const GLfloat *meshColor,
-              double f(DrawArea *, QPointF, Vertex));
-	void drawSurface(const GLfloat *color, double f(DrawArea *, QPointF, Vertex));
-	void drawMesh(const GLfloat *color, double f(DrawArea *, QPointF, Vertex));
+              qreal f(DrawArea *, QPointF, Vertex));
+	void drawSurface(const GLfloat *color, qreal f(DrawArea *, QPointF, Vertex));
+	void drawMesh(const GLfloat *color, qreal f(DrawArea *, QPointF, Vertex));
 	void drawOXYProjection();
 	void initializeGL();
 	void resizeGL(int width, int height);

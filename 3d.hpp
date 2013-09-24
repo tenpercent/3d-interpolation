@@ -10,28 +10,11 @@ public:
 	Vertex(): 
 		index (0), row (0), column (0)
 	{}
-	/*
-	~Vertex():
-	{}
-	*/
 	Vertex (const quint32 row, const quint32 column, const quint32 index): 
 		index(index), row(row), column(column)
 	{}
-	/*
-	Vertex (const Vertex& v):
-		index(v.index), row(v.row), column(v.column)
-	{}
-	*/
- 	//inline Vertex& operator= (const Vertex & v);
 };
-/*
-inline Vertex& Vertex::operator= (const Vertex &v){
-	index = v.index;
-	row = v.row;
-	column = v.column;
-	return *this;
-}
-*/
+
 QPointF getPointFromVertex (QPointF * const points, const quint32 segments, const Vertex v);
 
 class Triangle {
@@ -63,7 +46,7 @@ public:
 struct Monom {
 	quint32 xPow;
 	quint32 yPow;
-	double c;
+	qreal c;
 };
 //c*x^(xPow)*y^(yPow)
 typedef QList<Triangle> TriangleList;
@@ -71,13 +54,15 @@ typedef QList<Monom> Polynom;
 
 quint32 getPoints (QPointF **points);
 
-double phiFunctionGetByVertexIndex (QPointF * const points, const quint32 segments, const QPointF point, const quint32 vertexNumber);
+qreal phiFunctionGetByVertexIndex (QPointF * const points, const quint32 segments, const QPointF point, const quint32 vertexNumber);
 
 quint32 getVertexIndex (const quint32 segments, const quint32 row, const quint32 column);
 
 quint32 getIndexFromVertex (Vertex v);
 
 QPointF getPointByMeshCoordinates (QPointF * const points, const quint32 segments, const quint32 row, const quint32 column);
+
+QPointF getPointByMeshIndex (QPointF * const points, const quint32 segments, const quint32 index);
 
 Vertex getVertex (const quint32 row, const quint32 column, const quint32 index);
 
@@ -87,11 +72,11 @@ Triangle getTriangleByIndex (QPointF *points, const quint32 segments, const quin
 
 Polynom psiFunctionPolynom (const Triangle &triangle, const short n);
 
-double psiFunction (const QPointF point, const Triangle &triangle, const short n);
+qreal psiFunction (const QPointF point, const Triangle &triangle, const short n);
 
 bool pointInTriangle (const QPointF point, const Triangle &triangle);
 
-double phiFunctionGetByTriangle (const QPointF point, const Triangle &triangle, const QPointF vertex);
+qreal phiFunctionGetByTriangle (const QPointF point, const Triangle &triangle, const QPointF vertex);
 
 Polynom phiFunctionPolynom (const Triangle &triangle, const QPointF vertex);
 
@@ -101,21 +86,35 @@ TriangleList getSurroundingTriangles (QPointF * const points, const quint32 segm
 
 Triangle getTriangleByVertexAndLocalIndex (QPointF * const points, const quint32 segments, const Vertex v, const quint32 index);
 
-double determinant (const double a11, const double a12, const double a13, const double a21,
-const double a22, const double a23, const double a31, const double a32, const double a33);
+qreal determinant (const qreal a11, const qreal a12, const qreal a13, const qreal a21,
+const qreal a22, const qreal a23, const qreal a31, const qreal a32, const qreal a33);
 
 Polynom getLinearInterpolation (QPointF * const p);
 
 void addToPolynom(Polynom &p, const Monom &m);
 
-void addToPolynom(Polynom &p, quint32 xPow, quint32 yPow, double c);
+void addToPolynom(Polynom &p, quint32 xPow, quint32 yPow, qreal c);
 
 Polynom polynomMultiply(const Polynom &p1, const Polynom &p2);
 
-double polynomIntegral(const Polynom &p);
+qreal polynomIntegral(const Polynom &p);
 
-double getIntegral(QPointF * const points, const Polynom &polynom);
+qreal getIntegral(QPointF * const points, const Polynom &polynom);
 
-double getIntegral(const Triangle &triangle, const Polynom &polynom);
+qreal getIntegral(const Triangle &triangle, const Polynom &polynom);
 
-double getIntegralForGoodTriangle(QPointF * const triangle, const Polynom &polynom);
+qreal getIntegralForGoodTriangle(QPointF * const triangle, const Polynom &polynom);
+
+quint32 getSurroundingNeighborCount (const quint32 segments, const quint32 index);
+
+quint32 getCommonNeighborCount (const quint32 segments, const quint32 i_index, const quint32 j_index);
+
+void getLinearInterpolationPlane (QPointF* p, qreal* coef);
+
+void getLinearInterpolationPlane_1 (QPointF* p, qreal* coef);
+
+void getLinearInterpolationPlane_2 (QPointF* p, qreal* coef);
+
+void getLinearInterpolationPlane_3 (QPointF* p, qreal* coef);
+
+void getLinearInterpolationPlane_4 (QPointF* p, qreal* coef);
