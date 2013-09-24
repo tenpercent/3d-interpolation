@@ -73,7 +73,6 @@ quint32 MsrMatrix::solve(qreal *result) const {
 	while (qAbs(prevResidual - residual) > 1e-14) {
 		++iterations;
 		alpha = scalarProduct(p, r) / scalarProduct(p, p);
-		//qDebug() << "Alpha is" << alpha;
 		for (i = 0; i < size; ++i) {
 			result[i] += alpha * r[i];
 			r[i] -= alpha * p[i];
@@ -81,7 +80,6 @@ quint32 MsrMatrix::solve(qreal *result) const {
 		applyToVector(r, p);
 		prevResidual = residual;
 		residual = getResidual(result);
-		//qDebug() << "Residual is" << residual;
 	}
 	delete[] r;
 	delete[] p;

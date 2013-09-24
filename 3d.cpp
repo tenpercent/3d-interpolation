@@ -18,11 +18,6 @@ quint32 getPoints(QPointF **points) {
 	QTextStream stream(&coordinatesFile);
 	*points = new QPointF[size];
 	qreal x, y;
-	/*
-	for (quint32 i = 0; i < size; ++i) {
-		stream >> x >> y;
-		(*points)[i] = QPointF(x, y);
-	}*/
 	quint32 i(0);
 	while (!(stream.atEnd()) && (i < size)) {
 		stream >> x >> y;
@@ -587,7 +582,7 @@ void getLinearInterpolationPlane_3 (QPointF* p, qreal* coef) {
 	coef[0] = determinant(
 		function(p[0].x(), p[0].y()), 0, 1,
 		function(p[1].x(), p[1].y()), .5, 1,
-		function(p[2].x(), p[2].y()), 1, 1
+		function(p[2].x(), p[2].y()), 0, 1
 	) / det;
 	coef[1] = determinant(
 		.5, function(p[0].x(), p[0].y()), 1,

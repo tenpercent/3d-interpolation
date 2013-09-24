@@ -18,7 +18,6 @@ void taskGetNzCount(Args *a) {
 	
 	for (quint32 i = a->thread; i < total_points; i += a->threads) {
 		row = i / side_points;
-		//column = i - side_points * row;
 		column = i % side_points;
 		if (row == 0) {
 			if (column == 0) {
@@ -95,13 +94,12 @@ void taskFillMatrix(Args *a) {
 					//	as a result, the accuracy of the method is the same as of the one using linear interpolation
 					// 	some people might get angry and shout, however, it works
 
-					getLinearInterpolationPlane (intPoints, interpolationCoef);
-					a->matrix->rightCol[i] += (1./12) * smallTriangleArea * (interpolationCoef[0] + interpolationCoef[1] + 4 * interpolationCoef[2]);
+					//getLinearInterpolationPlane (intPoints, interpolationCoef);
+					//a->matrix->rightCol[i] += (1./12) * smallTriangleArea * (interpolationCoef[0] + interpolationCoef[1] + 4 * interpolationCoef[2]);
 
 					//	Honestly, I tried to make it work with a smaller triangulation but failed
 					//	Thus, I leave it to the future generations
-
-					/*
+			
 					smallerIntPoints[0] = t[0];
 					smallerIntPoints[1] = .5 * (t[0] + t[1]);
 					smallerIntPoints[2] = .5 * (t[0] + t[2]);
@@ -125,8 +123,8 @@ void taskFillMatrix(Args *a) {
 					smallerIntPoints[2] = .5 * (t[2] + t[0]);
 					getLinearInterpolationPlane_4 (smallerIntPoints, interpolationCoef);
 					a->matrix->rightCol[i] += (1./192) * smallTriangleArea * (interpolationCoef[0] * 5 + interpolationCoef[1] * 5 + interpolationCoef[2] * 16);
-					*/
 					
+					//Though, it sort of works
 				}
 			}
 			else{
@@ -139,108 +137,6 @@ void taskFillMatrix(Args *a) {
 			}
 		}
 	}
-	/*
-	for (quint32 i = 0; i < msize; ++i) {
-		if (i % a->threads != a->thread) {
-			ind += a->locnzc[i];
-			continue;
-		}
-		a->matrix->indices[i] = ind;
-		vertex1 = getVertexByIndex(a->calcSegments, i);
-		point1 = getPointFromVertex(a->points, a->calcSegments, vertex1);
-		for (quint32 j = 0; j < msize; ++j) {
-			partialScalProd = 0.;
-			vertex2 = getVertexByIndex(a->calcSegments, j);
-			point2 = getPointFromVertex(a->points, a->calcSegments, vertex2);
-			if (i == j) {
-				TriangleList triangleList = getSurroundingTriangles(a->points, a->calcSegments, vertex1);
-				a->matrix->rightCol[i] = 0.;
-				for (qint8 k = 0; k < triangleList.size(); ++k) {
-					Triangle t = triangleList.at(k);
-#ifdef RIGHT_PART_SIMPLE_INTERPOLATION
-					intPoints[0] = t[0];
-					intPoints[1] = t[1];
-					intPoints[2] = t[2];
-					interpolationPolynom = getLinearInterpolation(intPoints);
-					polynom = polynomMultiply(
-						phiFunctionPolynom(t, point1),
-						interpolationPolynom);
-					a->matrix->rightCol[i] += getIntegral(intPoints, polynom);
-#endif
-#ifdef RIGHT_PART_QUAD_INTERPOLATION
-					//ichi
-					intPoints[0] = t[0];
-					intPoints[1] = .5 * (t[0] + t[1]);
-					intPoints[2] = .5 * (t[0] + t[2]);
-					interpolationPolynom = getLinearInterpolation(intPoints);
-					polynom = polynomMultiply(
-						phiFunctionPolynom(t, point1),
-						interpolationPolynom);
-					a->matrix->rightCol[i] += getIntegral(intPoints, polynom);
-					//ni
-					intPoints[0] = .5 * (t[0] + t[1]);
-					intPoints[1] = t[1];
-					intPoints[2] = .5 * (t[1] + t[2]);
-					interpolationPolynom = getLinearInterpolation(intPoints);
-					polynom = polynomMultiply(
-						phiFunctionPolynom(t, point1),
-						interpolationPolynom);
-					a->matrix->rightCol[i] += getIntegral(intPoints, polynom);
-					//san
-					intPoints[0] = .5 * (t[0] + t[2]);
-					intPoints[1] = .5 * (t[1] + t[2]);
-					intPoints[2] = t[2];
-					interpolationPolynom = getLinearInterpolation(intPoints);
-					polynom = polynomMultiply(
-						phiFunctionPolynom(t, point1),
-						interpolationPolynom);
-					a->matrix->rightCol[i] += getIntegral(intPoints, polynom);
-					//yon
-					intPoints[0] = .5 * (t[0] + t[1]);
-					intPoints[1] = .5 * (t[1] + t[2]);
-					intPoints[2] = .5 * (t[0] + t[2]);
-					interpolationPolynom = getLinearInterpolation(intPoints);
-					polynom = polynomMultiply(
-						phiFunctionPolynom(t, point1),
-						interpolationPolynom);
-					a->matrix->rightCol[i] += getIntegral(intPoints, polynom);
-#endif
-				} 
-				partialScalProd = 0.;
-				for (qint8 k = 0; k < triangleList.size(); ++k) {
-					polynom = polynomMultiply(
-						phiFunctionPolynom(triangleList.at(k), point1),
-						phiFunctionPolynom(triangleList.at(k), point2));
-					temp = getIntegral(triangleList.at(k), polynom);
-					partialScalProd += temp;
-					if (temp < 0.) {
-						qDebug() << QString("INTEGRAL FAILED SURROUNDING %1 %2").arg(i).arg(j);
-					}
-				}
-				a->matrix->elements[i] = partialScalProd;
-			} else { 
-				TriangleList triangleList = getCommonTriangles(a->points, a->calcSegments, vertex1, vertex2);
-				if (triangleList.isEmpty()) {
-					continue;
-				}
-				partialScalProd = 0.;
-				for (qint8 k = 0; k < triangleList.size(); ++k) {
-					polynom = polynomMultiply(
-						phiFunctionPolynom(triangleList.at(k), point1),
-						phiFunctionPolynom(triangleList.at(k), point2));
-					temp = getIntegral(triangleList.at(k), polynom);
-					partialScalProd += temp;
-					if (temp < 0.) {
-						qDebug() << QString("INTEGRAL FAILED COMMON %1 %2").arg(i).arg(j);
-					}
-				}
-				a->matrix->elements[ind] = partialScalProd;
-				a->matrix->indices[ind] = j;
-				++ind;
-			}
-		}
-	}
-	*/
 	a->matrix->indices[msize] = ind;
 }
 
@@ -251,7 +147,6 @@ void taskFillValues(Args *a) {
 	QPointF point;
 	for (quint32 i = a->thread; i < meshDrawSize; i += a->threads) {
 		a->values[i] = 0.;
-		//point = getPointFromVertex(a->points, a->drawSegments, getVertexByIndex(a->drawSegments, i));
 		point = getPointByMeshIndex(a->points, a->drawSegments, i);
 		for (quint32 j = 0; j < meshCalcSize; ++j) {
 			phi = phiFunctionGetByVertexIndex(a->points, a->calcSegments, point, j);

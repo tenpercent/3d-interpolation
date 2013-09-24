@@ -19,7 +19,6 @@ struct Args {
 	quint32 *donethreads;
 	MsrMatrix *matrix;
 	QPointF *points;
-//	quint32 layers;
 	quint32 calcSegments;
 	quint32 drawSegments;
 	quint32 *locnzc;
