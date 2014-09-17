@@ -7,5 +7,6 @@ debug {
 
 QMAKE_CXXFLAGS += -Wextra 
 
-SOURCES += window.cpp function.cpp 3d.cpp msr.cpp threads.cpp integrals.cpp main.cpp
-HEADERS += window.hpp function.hpp 3d.hpp msr.hpp threads.hpp
+TEMPLATE = subdirs
+SUBDIRS += src include
+
