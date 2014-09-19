@@ -70,7 +70,7 @@ quint32 MsrMatrix::solve(qreal *result) const {
 	applyToVector(r, p);
 	residual = getResidual(result);
 	quint32 iterations = 0;
-	while (qAbs(prevResidual - residual) > 1e-14) {
+	while (qAbs(prevResidual - residual) > 1e-8 && iterations < 1000) {
 		++iterations;
 		alpha = scalarProduct(p, r) / scalarProduct(p, p);
 		for (i = 0; i < size; ++i) {
