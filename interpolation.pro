@@ -1,24 +1,23 @@
-CONFIG += warn_all debug_and_release
+CONFIG += warn_on
+# CONFIG += debug_and_release_target
+# CONFIG += debug
+CONFIG += build_all
 QT += opengl
-
-debug {
-	DEFINES += SAVE_TO_FILE
-}
-
-QMAKE_CXXFLAGS = -Wall -Wextra -std=c++0x
 
 INCLUDEPATH += "include"
 SOURCES += src/*
 HEADERS += include/*
 
-Release:DESTDIR = release
-Release:OBJECTS_DIR = release/.obj
-Release:MOC_DIR = release/.moc
-Release:RCC_DIR = release/.rcc
-Release:UI_DIR = release/.ui
-
-Debug:DESTDIR = debug
-Debug:OBJECTS_DIR = debug/.obj
-Debug:MOC_DIR = debug/.moc
-Debug:RCC_DIR = debug/.rcc
-Debug:UI_DIR = debug/.ui
+CONFIG(debug, debug|release) {
+    DESTDIR = build/debug
+    OBJECTS_DIR = build/debug/.obj
+    MOC_DIR = build/debug/.moc
+    RCC_DIR = build/debug/.rcc
+    UI_DIR = build/debug/.ui
+} else {
+    DESTDIR = build/release
+    OBJECTS_DIR = build/release/.obj
+    MOC_DIR = build/release/.moc
+    RCC_DIR = build/release/.rcc
+    UI_DIR = build/release/.ui
+}
