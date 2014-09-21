@@ -7,11 +7,11 @@ make
 
 Mac OS X:
 
-qmake -spec macx-g++ x.pro
+qmake -spec macx-g++ interpolation.pro
 make
 
 Windows:
 
-qmake -spec win32-g++ x.pro
+qmake -spec win32-g++ interpolation.pro
 make
 
