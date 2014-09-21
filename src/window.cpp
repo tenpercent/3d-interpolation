@@ -6,6 +6,7 @@
 
 #include "window.hpp"
 #include "function.hpp"
+#include "my_thread.hpp"
 
 #ifdef SHIFT_VERTICAL
 	#define VERTEX(p, v) point = p; glVertex3f(point.x() - 1., point.y() - 1., f(this, point, v) - average)
@@ -37,7 +38,8 @@ MyMainWindow::MyMainWindow():
 	actionGroup(this),
 	calcLayersSpinBox(this),
 	drawLayersSpinBox(this),
-	threadsSpinBox(this)
+	threadsSpinBox(this),
+	residualInfo("Ready", this)
 {
 	// prepare widgets
 	calcLayersLabel.setMargin(5);
@@ -72,13 +74,14 @@ MyMainWindow::MyMainWindow():
 	toolBar.addAction(&residualAction);
 	toolBar.addSeparator();
 	toolBar.addAction(&redrawAction);
-	connect(&redrawAction, SIGNAL(triggered()), &drawArea, SLOT(repaint()));
-	connect(&functionAction, SIGNAL(triggered(bool)), &drawArea, SLOT(repaint()));
-	connect(&interpolationAction, SIGNAL(triggered(bool)), &drawArea, SLOT(repaint()));
-	connect(&residualAction, SIGNAL(triggered(bool)), &drawArea, SLOT(repaint()));
+	connect(&redrawAction, SIGNAL(triggered()), &drawArea, SLOT(redraw()));
+	connect(&functionAction, SIGNAL(triggered(bool)), &drawArea, SLOT(redraw()));
+	connect(&interpolationAction, SIGNAL(triggered(bool)), &drawArea, SLOT(redraw()));
+	connect(&residualAction, SIGNAL(triggered(bool)), &drawArea, SLOT(redraw()));
 	// prepare window
 	resize(1000, 800);
 	setCentralWidget(&drawArea);
+	statusBar.addWidget(&residualInfo);
 	setStatusBar(&statusBar);
 	addToolBar(&toolBar);
 }
@@ -92,6 +95,11 @@ DrawableFlags MyMainWindow::drawableFlags() const {
 	if (interpolationAction.isChecked())
 		result |= DrawInterpolation;
 	return result;
+}
+
+void MyMainWindow::updateMessage(const QString &message)
+{
+	residualInfo.setText(message);
 }
 
 DrawableFlags DrawArea::drawableFlags() const {
@@ -173,20 +181,6 @@ void DrawArea::update(bool firstRun) {
 	pthread_cond_wait(&condvar_tomf, &mutex);
 	
 	QTextStream(stdout) << "Filling completed" << endl;
-/*
-	QTextStream(stdout) << "Left part & indices:" << endl;
-	for (quint32 i = 0; i < calcPoints + nzCount + 1; ++i) {
-		QTextStream(stdout) << matrix->elements[i] << " " << matrix->indices[i] << endl;
-	}
-	for (quint32 i = 0; i < calcPoints; ++i) {
-		QTextStream(stdout) << locnzc[i] << " ";
-	}
-	
-	QTextStream(stdout) << "Right part:" << endl;
-	for (quint32 i = 0; i < calcPoints; ++i) {
-		QTextStream(stdout) << matrix->rightCol[i] << " " << endl;
-	}
-*/
 	QTextStream(stdout) << "Solving system: ...";
 	QTextStream(stdout).flush();
 
@@ -212,7 +206,7 @@ void DrawArea::update(bool firstRun) {
 		pthread_join(thr[i], NULL);
 	updateResidual();
 }
-//???
+
 void DrawArea::updateResidual() {
 	qreal residual (0), value (0), phi (0), local_residual(0);
 	quint32 calcPoints = (calcSegments + 1) * (calcSegments + 1);
@@ -230,7 +224,7 @@ void DrawArea::updateResidual() {
 			residual = qMax(local_residual, residual);
 		}
 	}
-	WINDOW->statusBar.showMessage(QString("Residual: %1").arg(residual));
+	WINDOW->updateMessage(QString("Residual: %1").arg(residual));
 }
 
 void DrawArea::drawSurface(const GLfloat *color,
@@ -341,12 +335,30 @@ void DrawArea::draw(const GLfloat *surfaceColor, const GLfloat *meshColor,
 	drawOXYProjection();
 }
 
+void DrawArea::calculateNewValues(bool firstRun) {
+	CalculatingThread *thread = new CalculatingThread(this, firstRun);
+	connect(thread, SIGNAL(resultReady(qreal)), this, SLOT(handleResults(qreal)));
+	connect(thread, SIGNAL(resultReady(qreal)), this, SLOT(repaint()));
+  connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
+  thread->start();
+}
+
+void DrawArea::handleResults(qreal residual)
+{
+	WINDOW->updateMessage(QString("Residual: %1").arg(residual));
+}
+
+void DrawArea::redraw() {
+	if ( quint32(WINDOW->calcLayersSpinBox.value()) != calcSegments ||
+		   quint32(WINDOW->drawLayersSpinBox.value()) != drawSegments )
+	{
+		WINDOW->updateMessage(tr("Updating..."));
+		calculateNewValues();
+	}
+}
+
 void DrawArea::paintGL() {
-	if (
-		quint32(WINDOW->calcLayersSpinBox.value()) != calcSegments ||
-		quint32(WINDOW->drawLayersSpinBox.value()) != drawSegments
-	)
-		update();
+
 	glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glMatrixMode (GL_MODELVIEW);
 	glLoadIdentity ();
@@ -373,7 +385,6 @@ void DrawArea::paintGL() {
 		draw(lightBlueColor, blueColor, interpolationFunction);
 	if (flags & DrawResidual)
 		draw(redColor, blueColor, residualFunction);
-
 }
 
 void DrawArea::mousePressEvent(QMouseEvent *event) {
@@ -390,6 +401,6 @@ void DrawArea::mouseMoveEvent(QMouseEvent *event) {
 
 void DrawArea::wheelEvent(QWheelEvent *event) {
 	int delta = event->delta();
-	nSca *= qExp(qreal(delta) / 2048);
+	nSca *= qExp(delta / 2048.);
 	repaint();
 }

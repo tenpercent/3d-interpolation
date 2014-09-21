@@ -1,3 +1,6 @@
+#ifndef WINDOW_HPP
+#define WINDOW_HPP
+
 #include <QFlags>
 #include <QPointF>
 #include <QMainWindow>
@@ -10,6 +13,7 @@
 #include <QGLWidget>
 #include <QStatusBar>
 #include <qmath.h>
+
 #include "threads.hpp"
 
 enum Drawable {
@@ -47,6 +51,7 @@ public:
 	}
 	void update(bool firstRun = false);
 	void updateResidual();
+  void calculateNewValues(bool firstRun = false);
 
 private:
 	qreal xRot;
@@ -54,9 +59,11 @@ private:
 	qreal zRot;
 	qreal nSca;
 	QPoint mousePosition;
+protected:
 	quint32 drawSegments;
 	quint32 calcSegments;
 	quint32 threads;
+private:
 
 	void draw(const GLfloat *surfaceColor, const GLfloat *meshColor,
               qreal f(DrawArea *, QPointF, Vertex));
@@ -71,6 +78,12 @@ private:
 	void wheelEvent(QWheelEvent *event);
 
 	DrawableFlags drawableFlags() const;
+
+	friend class CalculatingThread;
+
+public slots:
+	void handleResults(qreal);
+	void redraw();
 };
 
 class MyMainWindow: public QMainWindow {
@@ -92,8 +105,12 @@ private:
 public:
 	MyMainWindow();
 	DrawableFlags drawableFlags() const;
+	void updateMessage(const QString &message);
 	QSpinBox calcLayersSpinBox;
 	QSpinBox drawLayersSpinBox;
 	QSpinBox threadsSpinBox;
 	QStatusBar statusBar;
+	QLabel residualInfo;
 };
+
+#endif

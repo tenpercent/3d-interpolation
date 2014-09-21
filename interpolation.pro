@@ -1,8 +1,8 @@
-CONFIG += warn_on
+CONFIG += warn_on thread
 # CONFIG += debug_and_release_target
 # CONFIG += debug
 CONFIG += build_all
-QT += opengl
+QT += opengl 
 
 INCLUDEPATH += "include"
 SOURCES += src/*
