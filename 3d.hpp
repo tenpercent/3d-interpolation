@@ -1,3 +1,6 @@
+#ifndef THRD_HPP
+#define THRD_HPP
+
 #include <QPointF>
 #include <QList>
 #include "msr.hpp"
@@ -118,3 +121,5 @@ void getLinearInterpolationPlane_2 (QPointF* p, qreal* coef);
 void getLinearInterpolationPlane_3 (QPointF* p, qreal* coef);
 
 void getLinearInterpolationPlane_4 (QPointF* p, qreal* coef);
+
+#endif

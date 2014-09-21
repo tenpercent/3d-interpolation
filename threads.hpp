@@ -1,3 +1,6 @@
+#ifndef THREADS_HPP
+#define THREADS_HPP
+
 #include <pthread.h>
 #include <QtGlobal>
 #include "3d.hpp"
@@ -27,3 +30,5 @@ struct Args {
 };
 
 void *tf(void *args);
+
+#endif

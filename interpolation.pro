@@ -1,11 +1,23 @@
-CONFIG += warn_all debug
-QT += opengl
+CONFIG += warn_on thread
+# CONFIG += debug_and_release_target
+# CONFIG += debug
+CONFIG += build_all
+QT += opengl 
 
-debug {
-	DEFINES += SAVE_TO_FILE
+INCLUDEPATH += "include"
+SOURCES += src/*
+HEADERS += include/*
+
+CONFIG(debug, debug|release) {
+    DESTDIR = build/debug
+    OBJECTS_DIR = build/debug/.obj
+    MOC_DIR = build/debug/.moc
+    RCC_DIR = build/debug/.rcc
+    UI_DIR = build/debug/.ui
+} else {
+    DESTDIR = build/release
+    OBJECTS_DIR = build/release/.obj
+    MOC_DIR = build/release/.moc
+    RCC_DIR = build/release/.rcc
+    UI_DIR = build/release/.ui
 }
-
-QMAKE_CXXFLAGS += -Wextra 
-
-SOURCES += window.cpp function.cpp 3d.cpp msr.cpp threads.cpp integrals.cpp main.cpp
-HEADERS += window.hpp function.hpp 3d.hpp msr.hpp threads.hpp

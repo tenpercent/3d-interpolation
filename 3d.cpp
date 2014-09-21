@@ -13,7 +13,8 @@
 
 quint32 getPoints(QPointF **points) {
 	const quint32 size = 3;
-	QFile coordinatesFile("coordinates.txt");
+	const QString filename = "coordinates.txt";
+	QFile coordinatesFile(filename);
 	coordinatesFile.open(QFile::ReadOnly);
 	QTextStream stream(&coordinatesFile);
 	*points = new QPointF[size];
@@ -27,10 +28,13 @@ quint32 getPoints(QPointF **points) {
 	coordinatesFile.close();
 	if (i < size) {
 		QMessageBox messageBox;
-		messageBox.setText("Please change coordinates.txt file");
-		messageBox.setInformativeText(QString("The parallelogram can't be constructed:\ntoo few points (%1)").arg(i));
+		messageBox.setText("Please change/create coordinates.txt file");
+		messageBox.setInformativeText(QString("Using default map!"));
 		messageBox.exec();
-		return 1;
+		(*points)[0] = QPointF(0, 0);
+		(*points)[1] = QPointF(0, 1);
+		(*points)[2] = QPointF(1, 0);
+		return 0;
 	}	
 	const qreal vectorProduct = ((*points)[2].y() - (*points)[0].y()) * ((*points)[1].x() - (*points)[0].x()) - 
 								((*points)[2].x() - (*points)[0].x()) * ((*points)[1].y() - (*points)[0].y());
@@ -41,7 +45,7 @@ quint32 getPoints(QPointF **points) {
 		messageBox.exec();
 		return 2;
 	}
-	if (vectorProduct < -EPS) {
+	if (vectorProduct < 0) {
 		qSwap((*points)[1], (*points)[2]);
 	}
 	return 0;
@@ -57,8 +61,8 @@ quint32 getIndexFromVertex (Vertex v){
 	return v.index;
 }
 
-QPointF getPointByMeshCoordinates (QPointF * const points, const quint32 segments, const quint32 row, const quint32 column) {//row:[0..segments], column: the same
-	//const qreal _segments = 1. / segments;
+QPointF getPointByMeshCoordinates (QPointF * const points, const quint32 segments, const quint32 row, const quint32 column) {
+    // row:[0..segments], column: the same
 	const QPointF deltaRow = (points[1] - points[0]) / segments;
 	const QPointF deltaColumn = (points[2] - points[0]) / segments;
 	QPointF result = points[0] + row * deltaRow + column * deltaColumn;
@@ -68,7 +72,6 @@ QPointF getPointByMeshCoordinates (QPointF * const points, const quint32 segment
 QPointF getPointByMeshIndex (QPointF * const points, const quint32 segments, const quint32 index) {
 	const quint32 pointsInRow = segments + 1;
 	const quint32 row = index / pointsInRow;
-	//const quint32 column = index - row * pointsInRow;
 	const quint32 column = index % pointsInRow;
 	return getPointByMeshCoordinates (points, segments, row, column);
 }
@@ -133,7 +136,6 @@ Polynom psiFunctionPolynom (const Triangle &triangle, const short n) {
 }
 
 qreal psiFunction (const QPointF point, const Triangle &triangle, const short n) {
-	//double u1, u2, v1, v2;
 	qreal u1, u2, v1, v2;
 	QPointF a = triangle[0], b = triangle[1], c = triangle[2];
 	if (n == 0) {
@@ -197,7 +199,7 @@ Polynom phiFunctionPolynom (const Triangle &triangle, const QPointF vertex) {
 	return result;
 }
 
-//#define resultappend(i) qDebug() << __LINE__; result.append(i)
+// #define resultappend(i) qDebug() << __LINE__; result.append(i)
 
 TriangleList getCommonTriangles (QPointF * const points, const quint32 segments, 
 const Vertex v1, const Vertex v2){
@@ -390,31 +392,41 @@ const qreal a22, const qreal a23, const qreal a31, const qreal a32, const qreal 
 Polynom getLinearInterpolation (QPointF * const p) {
 	Polynom result;
 	qreal a, b, c, d;
+	const qreal p0x = p[0].x(),
+	            p0y = p[0].y(),
+	            p1x = p[1].x(),
+	            p1y = p[1].y(),
+	            p2x = p[2].x(),
+	            p2y = p[2].y();
+	const qreal f0 = function (p0x, p0y),
+	            f1 = function (p1x, p1y),
+	            f2 = function (p2x, p2y);
 	d = determinant(
-		p[0].x(), p[0].y(), 1,
-		p[1].x(), p[1].y(), 1,
-		p[2].x(), p[2].y(), 1
+		p0x, p0y, 1,
+		p1x, p1y, 1,
+		p2x, p2y, 1
 	);
 	a = determinant(
-		function(p[0].x(), p[0].y()), p[0].y(), 1,
-		function(p[1].x(), p[1].y()), p[1].y(), 1,
-		function(p[2].x(), p[2].y()), p[2].y(), 1
+		f0, p0y, 1,
+		f1, p1y, 1,
+		f2, p2y, 1
 	) / d;
 	b = determinant(
-		p[0].x(), function(p[0].x(), p[0].y()), 1,
-		p[1].x(), function(p[1].x(), p[1].y()), 1,
-		p[2].x(), function(p[2].x(), p[2].y()), 1
+		p0x, f0, 1,
+		p1x, f1, 1,
+		p2x, f2, 1
 	) / d;
 	c = determinant(
-		p[0].x(), p[0].y(), function(p[0].x(), p[0].y()),
-		p[1].x(), p[1].y(), function(p[1].x(), p[1].y()),
-		p[2].x(), p[2].y(), function(p[2].x(), p[2].y())
+		p0x, p0y, f0,
+		p1x, p1y, f1,
+		p2x, p2y, f2
 	) / d;
 	addToPolynom(result, 1, 0, a);
 	addToPolynom(result, 0, 1, b);
 	addToPolynom(result, 0, 0, c);
 	return result;
 }
+
 quint32 getSurroundingNeighborCount (const quint32 segments, const quint32 index) {
 	const quint32 points_in_row = segments + 1;
 	const quint32 row = index / points_in_row;
@@ -456,6 +468,7 @@ quint32 getSurroundingNeighborCount (const quint32 segments, const quint32 index
 //	qDebug() << "@getSurroundingNeighborCount we left something..." << endl;
 	return 0;
 }
+
 quint32 getCommonNeighborCount (const quint32 segments, const quint32 i_index, const quint32 j_index) {
 	const qint32 points_in_row = segments + 1;
 	const qint32 i_row = i_index / points_in_row;
@@ -501,118 +514,69 @@ quint32 getCommonNeighborCount (const quint32 segments, const quint32 i_index, c
 	qDebug() << "@getCommonNeighborCount we left something..." << endl;
 	return 0;
 }
+
+void getLinearInterpolationPlane_general (QPointF *p, qreal *coef, const qreal points[3][3]) {
+	const qreal det = determinant(
+		points[0][0], points[0][1], points[0][2],
+		points[1][0], points[1][1], points[1][2],
+		points[2][0], points[2][1], points[2][2]
+	);
+	const qreal f0 = function (p[0].x(), p[0].y()),
+                f1 = function (p[1].x(), p[1].y()),
+                f2 = function (p[2].x(), p[2].y());
+	coef[0] = determinant(
+		f0, points[0][1], points[0][2],
+		f1, points[1][1], points[1][2],
+		f2, points[2][1], points[2][2]
+	) / det;
+	coef[1] = determinant(
+		points[0][0], f0, points[0][2],
+		points[1][0], f1, points[1][2],
+		points[2][0], f2, points[2][2]
+	) / det;
+	coef[2] = determinant(
+		points[0][0], points[0][1], f0,
+		points[1][0], points[1][1], f1,
+		points[2][0], points[2][1], f2
+	) / det;
+	return;
+}
+
 void getLinearInterpolationPlane (QPointF* p, qreal* coef) {
-	const qreal det = determinant(
-		0, 0, 1,
-		0, 1, 1,
-		1, 0, 1
-	);
-	coef[0] = determinant(
-		function(p[0].x(), p[0].y()), 0, 1,
-		function(p[1].x(), p[1].y()), 1, 1,
-		function(p[2].x(), p[2].y()), 0, 1
-	) / det;
-	coef[1] = determinant(
-		0, function(p[0].x(), p[0].y()), 1,
-		0, function(p[1].x(), p[1].y()), 1,
-		1, function(p[2].x(), p[2].y()), 1
-	) / det;
-	coef[2] = determinant(
-		0, 0, function(p[0].x(), p[0].y()),
-		0, 1, function(p[1].x(), p[1].y()),
-		1, 0, function(p[2].x(), p[2].y())
-	) / det;
-	return;
+	 qreal a[3][3] = {{0,0,1},
+	                       {0,1,1},
+	                       {1,0,1}};
+	getLinearInterpolationPlane_general (p, coef, a);
 }
+
 void getLinearInterpolationPlane_1 (QPointF* p, qreal* coef) {
-	const qreal det = determinant(
-		0, 0, 1,
-		0, .5, 1,
-		.5, 0, 1
-	);
-	coef[0] = determinant(
-		function(p[0].x(), p[0].y()), 0, 1,
-		function(p[1].x(), p[1].y()), .5, 1,
-		function(p[2].x(), p[2].y()), 0, 1
-	) / det;
-	coef[1] = determinant(
-		0, function(p[0].x(), p[0].y()), 1,
-		0, function(p[1].x(), p[1].y()), 1,
-		.5, function(p[2].x(), p[2].y()), 1
-	) / det;
-	coef[2] = determinant(
-		0, 0, function(p[0].x(), p[0].y()),
-		0, .5, function(p[1].x(), p[1].y()),
-		.5, 0, function(p[2].x(), p[2].y())
-	) / det;
-	return;
+	 qreal a[3][3] = {{0., 0., 1},
+	                       {0., .5, 1},
+	                       {.5, 0., 1}};
+	getLinearInterpolationPlane_general (p, coef, a);
 }
+
 void getLinearInterpolationPlane_2 (QPointF* p, qreal* coef) {
-	const qreal det = determinant(
-		0, .5, 1,
-		0, 1, 1,
-		.5, .5, 1
-	);
-	coef[0] = determinant(
-		function(p[0].x(), p[0].y()), .5, 1,
-		function(p[1].x(), p[1].y()), 1, 1,
-		function(p[2].x(), p[2].y()), .5, 1
-	) / det;
-	coef[1] = determinant(
-		0, function(p[0].x(), p[0].y()), 1,
-		0, function(p[1].x(), p[1].y()), 1,
-		.5, function(p[2].x(), p[2].y()), 1
-	) / det;
-	coef[2] = determinant(
-		0, .5, function(p[0].x(), p[0].y()),
-		0, 1, function(p[1].x(), p[1].y()),
-		.5, .5, function(p[2].x(), p[2].y())
-	) / det;
-	return;
+	 qreal a[3][3] = {{0., .5, 1},
+	                       {0., 1., 1},
+	                       {.5, .5, 1}};
+	getLinearInterpolationPlane_general (p, coef, a);
 }
+
 void getLinearInterpolationPlane_3 (QPointF* p, qreal* coef) {
-	const qreal det = determinant(
-		.5, 0, 1,
-		.5, .5, 1,
-		1, 0, 1
-	);
-	coef[0] = determinant(
-		function(p[0].x(), p[0].y()), 0, 1,
-		function(p[1].x(), p[1].y()), .5, 1,
-		function(p[2].x(), p[2].y()), 0, 1
-	) / det;
-	coef[1] = determinant(
-		.5, function(p[0].x(), p[0].y()), 1,
-		.5, function(p[1].x(), p[1].y()), 1,
-		1, function(p[2].x(), p[2].y()), 1
-	) / det;
-	coef[2] = determinant(
-		.5, 0, function(p[0].x(), p[0].y()),
-		.5, .5, function(p[1].x(), p[1].y()),
-		1, 0, function(p[2].x(), p[2].y())
-	) / det;
-	return;
+	 qreal a[3][3] = {
+		{.5, 0., 1},
+		{.5, .5, 1},
+		{1., 0., 1}
+	};
+	getLinearInterpolationPlane_general (p, coef, a);
 }
+
 void getLinearInterpolationPlane_4 (QPointF* p, qreal* coef) {
-	const qreal det = determinant(
-		0, .5, 1,
-		.5, .5, 1,
-		.5, 0, 1
-	);
-	coef[0] = determinant(
-		function(p[0].x(), p[0].y()), .5, 1,
-		function(p[1].x(), p[1].y()), .5, 1,
-		function(p[2].x(), p[2].y()), 0, 1
-	) / det;
-	coef[1] = determinant(
-		0, function(p[0].x(), p[0].y()), 1,
-		.5, function(p[1].x(), p[1].y()), 1,
-		.5, function(p[2].x(), p[2].y()), 1
-	) / det;
-	coef[2] = determinant(
-		0, .5, function(p[0].x(), p[0].y()),
-		.5, .5, function(p[1].x(), p[1].y()),
-		.5, 0, function(p[2].x(), p[2].y())
-	) / det;
-	return;
+	 qreal a[3][3] = {
+		{0., .5, 1},
+		{.5, .5, 1},
+		{.5, 0., 1}
+	};
+	getLinearInterpolationPlane_general (p, coef, a);
 }

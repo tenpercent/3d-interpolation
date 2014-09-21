@@ -1,3 +1,6 @@
+#ifndef MSR_HPP
+#define MSR_HPP
+
 #include <QtGlobal>
 #define RIGHT_PART_QUAD_INTERPOLATION
 class MsrMatrix {
@@ -18,3 +21,5 @@ private:
 	void applyToVector(qreal *vector, qreal *newVector) const;
 	qreal getResidual(qreal *vector) const;
 };
+
+#endif
